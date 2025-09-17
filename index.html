@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visualizador Geoespacial - IDEFLOR-Bio</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/leaflet.vectorgrid@1.3.0/dist/leaflet.vectorgrid.min.js"></script>
+  <style>
+    html, body { margin: 0; height: 100%; font-family: 'Inter', sans-serif; overflow: hidden; }
+    #map { height: calc(100vh - 64px); width: 100%; z-index: 0; }
+    .leaflet-control-container .leaflet-control-attribution { font-size: 0.75rem; }
+
+    .leaflet-top.leaflet-right  { z-index: 2147483600 !important; }
+    .leaflet-bottom.leaflet-right { z-index: 2147483500 !important; }
+
+    .legend {
+      background-color: white; padding: 10px; border-radius: 5px;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.4); line-height: 22px; color: #555;
+    }
+    .legend i { width: 18px; height: 18px; float: left; margin-right: 8px; opacity: 1; border-radius: 4px; }
+    .legend .line { width: 18px; height: 18px; float: left; margin-right: 8px; opacity: 1; }
+    .legend .line i { border: 2px solid; opacity: 1; border-radius: 0; }
+
+    .modal-overlay {
+      position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.5);
+      display: flex; justify-content: center; align-items: center;
+      z-index: 2147483647; opacity: 0; visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .modal-overlay.show { opacity: 1; visibility: visible; }
+    .modal-content {
+      background-color: white; padding: 24px; border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); max-width: 90%; max-height: 90%;
+      overflow-y: auto; transform: translateY(-20px); transition: transform 0.3s ease;
+    }
+    .modal-overlay.show .modal-content { transform: translateY(0); }
+
+    #searchControl { position: absolute; top: 5rem; left: .5rem; z-index: 5000; }
+    #identifyControl { 
+      position: absolute; 
+      top: 5rem; 
+      left: 21.5rem; 
+      z-index: 5000; 
+    }
+    #identifyControl.active { cursor: crosshair; }
+    #identifyMenu {
+        position: absolute;
+        top: 2rem;
+        left: 0;
+        z-index: 5001;
+        background-color: white;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+        display: none;
+    }
+    #identifyMenu.active { display: block; }
+  </style>
+</head>
+<body class="bg-gray-100">
+  <header class="bg-blue-800 text-white flex items-center justify-between p-4 shadow-md h-16">
+    <div class="flex items-center">
+      <img src="logo_ngeo.png" alt="Logo NGEO IDEFLOR-Bio" class="h-12 w-auto mr-4" />
+      <span class="text-xl font-bold">Visualizador Geoespacial - IDEFLOR-Bio</span>
+    </div>
+    <button id="aboutAppBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">
+      Sobre o App
+    </button>
+  </header>
+
+  <div id="searchControl" class="bg-white p-4 rounded-lg shadow-lg w-80 space-y-3">
+    <label for="layerSelect" class="block text-gray-700 font-semibold">Camada</label>
+    <select id="layerSelect" class="w-full text-sm p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></select>
+    
+    <label for="columnSelect" class="block text-gray-700 font-semibold">Coluna</label>
+    <select id="columnSelect" disabled class="w-full text-sm p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></select>
+
+    <label for="valueSelect" class="block text-gray-700 font-semibold">Valor</label>
+    <select id="valueSelect" disabled class="w-full text-sm p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></select>
+
+    <div class="flex gap-2 pt-1">
+      <button id="applyFilterBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition">Aplicar</button>
+      <button id="clearFiltersBtn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg shadow-md transition">Limpar</button>
+    </div>
+
+    <div class="text-xs text-gray-600 flex items-center gap-2">
+      <span id="countBadge" class="px-2 py-1 rounded bg-gray-100 border border-gray-300"></span>
+      <a id="downloadBtn" class="text-blue-700 underline" href="#" download="dados_filtrados.geojson">Baixar filtro</a>
+    </div>
+  </div>
+  
+  <div id="identifyControl" class="relative">
+      <button id="identifyBtn" class="bg-white p-2 rounded-lg shadow-md hover:bg-gray-200 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+      </button>
+      <div id="identifyMenu" class="absolute bg-white p-4 rounded-lg shadow-lg w-64 space-y-2">
+          <h4 class="font-semibold text-gray-700">Identificar Camadas:</h4>
+          <div id="identifyCheckboxes"></div>
+          <button id="exitIdentifyBtn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out">Sair</button>
+      </div>
+  </div>
+
+  <div id="map" class="relative"></div>
+
+  <div id="aboutAppModal" class="modal-overlay">
+    <div class="modal-content">
+      <h2 class="text-2xl font-bold text-gray-800 mb-4">Sobre o Aplicativo</h2>
+      <p class="text-gray-700 mb-4">
+        Este mapa web foi elaborado para atender a demanda de produção de geoinformações do processo <strong>2025/2460154 / IDEFLORBIO</strong>. O objetivo é facilitar a visualização e a pesquisa das áreas de municípios, Unidades de Conservação e outras camadas relevantes.
+      </p>
+      <hr class="my-4">
+      <p class="text-sm text-gray-600 mb-2">
+        Desenvolvido por
+        <a href="https://samuel-c-santos.github.io/" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline">
+          Samuel C. Santos – Coordenador de Geotecnologias do IDEFLOR-Bio
+        </a>.
+      </p>
+      <button id="closeModalBtn" class="mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">
+        Fechar
+      </button>
+    </div>
+  </div>
+
+  <script>
+    /* ---------- Estado Global ---------- */
+    let map;
+    let originalLayers = {};
+    let activeLayerName;
+    let legendControl;
+    let currentFilteredFC = null;
+    let identifyActive = false;
+    let originalMapBounds;
+    let currentMapLayers = {};
+
+    /* ---------- UI refs ---------- */
+    const layerSel = document.getElementById('layerSelect');
+    const colSel = document.getElementById('columnSelect');
+    const valSel = document.getElementById('valueSelect');
+    const applyBtn = document.getElementById('applyFilterBtn');
+    const clearBtn = document.getElementById('clearFiltersBtn');
+    const countEl = document.getElementById('countBadge');
+    const dlBtn = document.getElementById('downloadBtn');
+
+    const identifyBtn = document.getElementById('identifyBtn');
+    const identifyMenu = document.getElementById('identifyMenu');
+    const identifyCheckboxes = document.getElementById('identifyCheckboxes');
+    const exitIdentifyBtn = document.getElementById('exitIdentifyBtn');
+
+
+    /* ---------- Utils do filtro ---------- */
+    const norm = v => (v === null || v === undefined) ? '' : String(v).trim();
+    const uniq = arr => Array.from(new Set(arr));
+
+    /* ---------- Estilos/cores ---------- */
+    const getMassaDaguaStyle = () => ({ fillColor: '#78d4e9', color: '#78d4e9', weight: 1, opacity: 1, fillOpacity: 1 });
+    const getMunicipiosStyle = () => ({ fillColor:'transparent', weight: 2, opacity: 1, color:'black', dashArray:'5, 5', fillOpacity:0 });
+    const getQuilombosEstaduaisStyle = () => ({ fillColor: '#74381e', color: 'black', weight: 1, opacity: 1, fillOpacity: 1 });
+    const getQuilombosFederaisStyle = () => ({ fillColor: '#c37d64', color: 'black', weight: 1, opacity: 1, fillOpacity: 1 });
+    const getTerrasIndigenasStyle = () => ({ fillColor: '#f4cd94', color: 'black', weight: 1, opacity: 1, fillOpacity: 1 });
+    const getUcsEstaduaisStyle = () => ({ fillColor: '#a1b38b', color: 'black', weight: 1, opacity: 1, fillOpacity: 1 });
+    const getUcsFederaisStyle = () => ({ fillColor: '#d0e6b3', color: 'black', weight: 1, opacity: 1, fillOpacity: 1 });
+    const getRegioesIntegracaoStyle = () => ({ fillColor:'transparent', weight:3, opacity:1, color:'brown', fillOpacity:0 });
+
+    const getMassaDaguaVectorStyle = (feature) => {
+        return {
+            weight: 0.5,
+            color: '#78d4e9',
+            opacity: 1,
+            fillColor: '#78d4e9',
+            fillOpacity: 0.8
+        };
+    };
+
+    /* ---------- Popups ---------- */
+    function onEachFeature(feature, layer) {
+        layer.on('click', function(e) {
+            if (!identifyActive) return;
+            const checkbox = document.getElementById(`identify-${activeLayerName}`);
+            if (checkbox && checkbox.checked) {
+                let popupContent = `<h4>${activeLayerName}</h4><div class="p-2 text-sm">${Object.entries(feature.properties).map(([k, v]) => `<strong>${k}:</strong> ${v}<br>`).join('')}</div>`;
+                L.popup()
+                    .setLatLng(e.latlng)
+                    .setContent(popupContent)
+                    .openOn(map);
+            }
+        });
+    }
+
+    function showPopupForLayers(e) {
+        if (!identifyActive) return;
+
+        let popupContent = "<h3>Informações do Ponto</h3>";
+        let foundFeatures = false;
+        
+        const layersToCheck = Object.keys(originalLayers);
+
+        layersToCheck.forEach(layerName => {
+            const checkbox = document.getElementById(`identify-${layerName}`);
+            if (checkbox && checkbox.checked && currentMapLayers[layerName]) {
+                const layerGroup = currentMapLayers[layerName];
+                let layerFeatures = [];
+                layerGroup.eachLayer(layer => {
+                    layerFeatures.push(layer.feature);
+                });
+
+                layerFeatures.forEach(feature => {
+                    const featureLayer = L.geoJSON(feature);
+                    if (featureLayer.getBounds().contains(e.latlng)) {
+                        popupContent += `<hr><h4>${layerName}</h4><div class="p-2 text-sm">${Object.entries(feature.properties).map(([k, v]) => `<strong>${k}:</strong> ${v}<br>`).join('')}</div>`;
+                        foundFeatures = true;
+                    }
+                });
+            }
+        });
+
+        if (foundFeatures) {
+            L.popup()
+                .setLatLng(e.latlng)
+                .setContent(popupContent)
+                .openOn(map);
+        }
+    }
+
+    /* ---------- Legenda ---------- */
+    function createLegend(){
+      legendControl = L.control({position:'bottomright'});
+      legendControl.onAdd = () => {
+        const div = L.DomUtil.create('div','legend');
+        div.innerHTML = '<strong>Legenda</strong><br>';
+        return div;
+      };
+      legendControl.addTo(map);
+      updateLegend();
+    }
+    function updateLegend(){
+      const el = document.querySelector('.legend'); if(!el) return;
+      let html = '<strong>Legenda</strong><br>';
+      
+      const layers = [
+          { name: 'Massa d\'Água', layerRef: originalLayers['Massa d\'Água']?.leafletLayer, color: '#78d4e9', type: 'polygon' },
+          { name: 'Municípios', layerRef: originalLayers['Municípios']?.leafletLayer, color: 'black', type: 'dashed_line' },
+          { name: 'Regiões de Integração', layerRef: originalLayers['Regiões de Integração']?.leafletLayer, color: 'brown', type: 'line' },
+          { name: 'UCs Estaduais', layerRef: originalLayers['UCs Estaduais']?.leafletLayer, color: '#a1b38b', type: 'polygon' },
+          { name: 'Terras Indígenas', layerRef: originalLayers['Terras Indígenas']?.leafletLayer, color: '#f4cd94', type: 'polygon' },
+          { name: 'UCs Federais', layerRef: originalLayers['UCs Federais']?.leafletLayer, color: '#d0e6b3', type: 'polygon' },
+          { name: 'Quilombos Estaduais', layerRef: originalLayers['Quilombos Estaduais']?.leafletLayer, color: '#74381e', type: 'polygon' },
+          { name: 'Quilombos Federais', layerRef: originalLayers['Quilombos Federais']?.leafletLayer, color: '#c37d64', type: 'polygon' },
+      ];
+
+      layers.forEach(l => {
+        if (l.layerRef && map.hasLayer(l.layerRef)) {
+          if (l.type === 'polygon') { html += `<i style="background:${l.color}"></i> ${l.name}<br>`; }
+          else if (l.type === 'line') { html += `<div class="line" style="border:3px solid ${l.color}; background:transparent"></div> ${l.name}<br>`; }
+          else if (l.type === 'dashed_line') { html += `<div class="line" style="border:2px dashed ${l.color}; background:transparent"></div> ${l.name}<br>`; }
+        }
+      });
+      el.innerHTML = html;
+    }
+
+    /* ---------- Funções de Filtro e Mapas ---------- */
+    function updateCount(n){ countEl.textContent = `${n} selecionado${n===1?'':'s'}`; }
+
+    function fitToLayer(layer){
+      const b = layer.getBounds?.();
+      if (b && b.isValid && b.isValid()) map.flyToBounds(b, { padding: [30,30], duration: 0.6, maxZoom: 13 });
+    }
+
+    function buildDownload(fc){
+      try{
+        const blob = new Blob([JSON.stringify(fc, null, 2)], { type: 'application/geo+json' });
+        const url  = URL.createObjectURL(blob);
+        dlBtn.href = url; dlBtn.download = 'dados_filtrados.geojson';
+      }catch(e){}
+    }
+    
+    function populateLayerSelect(layers){
+        layerSel.innerHTML = '';
+        const ph = document.createElement('option'); ph.value=''; ph.textContent='— escolha a camada —'; layerSel.appendChild(ph);
+        Object.keys(layers).forEach(k => {
+            const opt = document.createElement('option');
+            opt.value = k;
+            opt.textContent = k;
+            layerSel.appendChild(opt);
+        });
+        colSel.disabled = true;
+        valSel.disabled = true;
+    }
+
+    function populateColumns(layerName){
+      const features = originalLayers[layerName]?.features || [];
+      const first = features.find(f => f && f.properties) || null;
+      const keys = first ? Object.keys(first.properties) : [];
+      colSel.innerHTML = '';
+      if (!keys.length) {
+        const opt = document.createElement('option'); opt.value=''; opt.textContent='(sem colunas)';
+        colSel.appendChild(opt); colSel.disabled = true; return;
+      }
+      const ph = document.createElement('option'); ph.value=''; ph.textContent='— escolha a coluna —'; colSel.appendChild(ph);
+      keys.forEach(k => { 
+        const o=document.createElement('option'); 
+        o.value=k; 
+        
+        if(k === 'Municipios_lista') {
+            o.textContent = 'Municípios Sobrepostos';
+        } else if (k === 'RegioesIntegracao_lista') {
+            o.textContent = 'Reg. Integr. Sobrepostas';
+        } else {
+            o.textContent = k;
+        }
+
+        colSel.appendChild(o); 
+      });
+      colSel.disabled = false;
+      valSel.innerHTML=''; valSel.disabled = true;
+    }
+
+    function populateValues(layerName, column){
+      const features = originalLayers[layerName]?.features || [];
+      
+      let values = [];
+      if (column.endsWith('_lista')) {
+          features.forEach(f => {
+              const valList = f?.properties?.[column]?.split(',').map(v => norm(v));
+              if (valList) values = values.concat(valList);
+          });
+      } else {
+          values = features.map(f => f?.properties?.[column]).map(norm);
+      }
+
+      const uniqVals = uniq(values).sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true,sensitivity:'base'}));
+      
+      valSel.innerHTML = '';
+      const ph = document.createElement('option'); ph.value=''; ph.textContent='— escolha o valor —'; valSel.appendChild(ph);
+      const all = document.createElement('option'); all.value='__ALL__'; all.textContent='(Todos)'; valSel.appendChild(all);
+      uniqVals.forEach(v => { const o=document.createElement('option'); o.value=v; o.textContent=(v===''?'(vazio)':v); valSel.appendChild(o); });
+      valSel.disabled = false;
+      valSel.value = '__ALL__';
+    }
+
+    function filterFC(layerName, column, value){
+      const features = originalLayers[layerName]?.features || [];
+      if (!column || !value || value === '__ALL__') {
+        return { type:'FeatureCollection', features: features };
+      }
+
+      if (column.endsWith('_lista')) {
+          return {
+              type: 'FeatureCollection',
+              features: features.filter(f => {
+                  const valList = f?.properties?.[column]?.split(',').map(v => norm(v));
+                  return valList && valList.includes(norm(value));
+              })
+          };
+      }
+      
+      return {
+        type:'FeatureCollection',
+        features: features.filter(f => norm(f?.properties?.[column]) === norm(value))
+      };
+    }
+
+    function refreshMap(fc, layerName) {
+        // Remove todas as camadas que não são de base
+        map.eachLayer(l => {
+            if (l instanceof L.GeoJSON) {
+                map.removeLayer(l);
+            }
+        });
+        
+        const styleFunc = originalLayers[layerName]?.styleFunc;
+        if (!styleFunc) return;
+
+        const layerOptions = { pane: originalLayers[layerName].pane, style: styleFunc, onEachFeature: onEachFeature };
+        
+        currentFilteredFC = null;
+
+        // Caso de filtro por sobreposição (multi-camadas)
+        if (layerName === 'Municípios' || layerName === 'Regiões de Integração') {
+            currentFilteredFC = { type: 'FeatureCollection', features: [] };
+            let totalCount = 0;
+            
+            // Adiciona a camada de referência filtrada ao mapa
+            const refLayer = L.geoJSON(fc, layerOptions).addTo(map);
+            refLayer.bringToFront();
+            fitToLayer(refLayer);
+            currentFilteredFC.features.push(...fc.features);
+            currentMapLayers[layerName] = refLayer;
+
+            // Filtra e adiciona as outras camadas
+            const otherLayers = Object.keys(originalLayers).filter(name => name !== 'Municípios' && name !== 'Regiões de Integração' && name !== 'Massa d\'Água');
+            otherLayers.forEach(otherLayerName => {
+                const otherLayerData = originalLayers[otherLayerName];
+                const column = layerName === 'Municípios' ? 'Municipios_lista' : 'RegioesIntegracao_lista';
+                const filteredFeatures = otherLayerData.features.filter(f => {
+                    const valList = f?.properties?.[column]?.split(',').map(v => norm(v));
+                    return valList && valList.includes(norm(valSel.value));
+                });
+                
+                if (filteredFeatures.length > 0) {
+                    const newLayer = L.geoJSON({ type: 'FeatureCollection', features: filteredFeatures }, {
+                        pane: otherLayerData.pane,
+                        style: otherLayerData.styleFunc,
+                        onEachFeature: onEachFeature
+                    }).addTo(map);
+                    newLayer.bringToFront();
+                    currentFilteredFC.features.push(...filteredFeatures);
+                    totalCount += filteredFeatures.length;
+                    currentMapLayers[otherLayerName] = newLayer;
+                }
+            });
+            updateCount(totalCount);
+
+        } else { // Caso de filtro por atributo (single-camada)
+            const filteredLayer = L.geoJSON(fc, layerOptions).addTo(map);
+            filteredLayer.bringToFront();
+            fitToLayer(filteredLayer);
+            updateCount(fc.features.length);
+            currentFilteredFC = fc;
+            currentMapLayers[layerName] = filteredLayer;
+        }
+
+        buildDownload(currentFilteredFC);
+        updateLegend();
+    }
+
+    /* ---------- Boot ---------- */
+    window.onload = async function () {
+      const googleRelief = L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', { maxZoom: 18, attribution: '&copy; Google' });
+      const googleSat = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { maxZoom: 20, attribution: '&copy; Google' });
+      const bingSat = L.tileLayer('https://ecn.t3.tiles.virtualearth.net/tiles/a{q}.jpeg?g=0', { attribution: '&copy; Bing Maps', maxZoom: 18 });
+      const sentinel2 = L.tileLayer.wms('https://tiles.maps.eox.at/wms', { layers: 's2cloudless-2024_3857', format: 'image/jpeg', attribution: '© EOX IT Services' });
+      const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' });
+      const cartoDbVoy = L.tileLayer('https://a.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}.png', { maxZoom: 20, attribution: '&copy; CARTO' });
+
+      const baseLayers = {
+        "Google Relevo com Rótulos": googleRelief,
+        "Google Satellite": googleSat,
+        "Bing Satellite": bingSat,
+        "Sentinel-2 cloudless layer": sentinel2,
+        "OpenStreetMap": osm,
+        "CartoDB Voyager": cartoDbVoy
+      };
+
+      map = L.map('map', { center: [-5.0, -50.0], zoom: 6, layers: [googleRelief] });
+      originalMapBounds = map.getBounds();
+
+      // Painéis para controle da ordem Z
+      map.createPane('quilombosPane'); map.getPane('quilombosPane').style.zIndex = 300;
+      map.createPane('terrasPane'); map.getPane('terrasPane').style.zIndex = 350;
+      map.createPane('ucsPane'); map.getPane('ucsPane').style.zIndex = 400;
+      map.createPane('regioesPane'); map.getPane('regioesPane').style.zIndex = 450;
+      map.createPane('municipiosPane'); map.getPane('municipiosPane').style.zIndex = 500;
+      map.createPane('massaDaguaPane'); map.getPane('massaDaguaPane').style.zIndex = 550;
+      map.createPane('dataPane'); map.getPane('dataPane').style.zIndex = 600;
+
+      try {
+        const [municipiosRes, ucsEstaduaisRes, ucsFederaisRes, regioesRes, quilombosEstaduaisRes, quilombosFederaisRes, terrasIndigenasRes] = await Promise.all([
+          fetch('data/municipios.geojson'),
+          fetch('data/ucs_estaduais.geojson'),
+          fetch('data/ucs_federais.geojson'),
+          fetch('data/regioes_integracao.geojson'),
+          fetch('data/quilombos_estaduais.geojson'),
+          fetch('data/quilombos_federais.geojson'),
+          fetch('data/terras_indigenas.geojson')
+        ]);
+        
+        const [municipiosData, ucsEstaduaisData, ucsFederaisData, regioesData, quilombosEstaduaisData, quilombosFederaisData, terrasIndigenasData] = await Promise.all([
+          municipiosRes.json(), ucsEstaduaisRes.json(), ucsFederaisRes.json(), regioesRes.json(), quilombosEstaduaisRes.json(), quilombosFederaisRes.json(), terrasIndigenasRes.json()
+        ]);
+        
+        originalLayers['Municípios'] = {
+            features: municipiosData.features,
+            leafletLayer: L.geoJSON(municipiosData, { pane: 'municipiosPane', style: getMunicipiosStyle, onEachFeature: onEachFeature }),
+            styleFunc: getMunicipiosStyle,
+            pane: 'municipiosPane'
+        };
+
+        originalLayers['Regiões de Integração'] = {
+            features: regioesData.features,
+            leafletLayer: L.geoJSON(regioesData, { pane: 'regioesPane', style: getRegioesIntegracaoStyle, onEachFeature: onEachFeature }),
+            styleFunc: getRegioesIntegracaoStyle,
+            pane: 'regioesPane'
+        };
+
+        originalLayers['UCs Estaduais'] = {
+            features: ucsEstaduaisData.features,
+            leafletLayer: L.geoJSON(ucsEstaduaisData, { pane: 'ucsPane', style: getUcsEstaduaisStyle, onEachFeature: onEachFeature }),
+            styleFunc: getUcsEstaduaisStyle,
+            pane: 'ucsPane'
+        };
+
+        originalLayers['Terras Indígenas'] = {
+            features: terrasIndigenasData.features,
+            leafletLayer: L.geoJSON(terrasIndigenasData, { pane: 'terrasPane', style: getTerrasIndigenasStyle, onEachFeature: onEachFeature }),
+            styleFunc: getTerrasIndigenasStyle,
+            pane: 'terrasPane'
+        };
+
+        originalLayers['UCs Federais'] = {
+            features: ucsFederaisData.features,
+            leafletLayer: L.geoJSON(ucsFederaisData, { pane: 'ucsPane', style: getUcsFederaisStyle, onEachFeature: onEachFeature }),
+            styleFunc: getUcsFederaisStyle,
+            pane: 'ucsPane'
+        };
+        
+        originalLayers['Quilombos Estaduais'] = {
+            features: quilombosEstaduaisData.features,
+            leafletLayer: L.geoJSON(quilombosEstaduaisData, { pane: 'quilombosPane', style: getQuilombosEstaduaisStyle, onEachFeature: onEachFeature }),
+            styleFunc: getQuilombosEstaduaisStyle,
+            pane: 'quilombosPane'
+        };
+
+        originalLayers['Quilombos Federais'] = {
+            features: quilombosFederaisData.features,
+            leafletLayer: L.geoJSON(quilombosFederaisData, { pane: 'quilombosPane', style: getQuilombosFederaisStyle, onEachFeature: onEachFeature }),
+            styleFunc: getQuilombosFederaisStyle,
+            pane: 'quilombosPane'
+        };
+        
+        const massaDaguaStyle = {
+            'water': getMassaDaguaVectorStyle()
+        };
+        originalLayers['Massa d\'Água'] = {
+            leafletLayer: L.vectorGrid.protobuf("https://api.maptiler.com/tiles/0199583b-df1d-7f23-aa9f-46218575d630/{z}/{x}/{y}.pbf?key=dbXoCNZeIRs1oQK1BIPZ", {
+                vectorTileLayerStyles: massaDaguaStyle,
+                pane: 'massaDaguaPane',
+                minZoom: 0, 
+                maxZoom: 16
+            }),
+            styleFunc: getMassaDaguaVectorStyle,
+            pane: 'massaDaguaPane'
+        };
+
+        const overlayLayers = {
+            "Massa d'Água": originalLayers['Massa d\'Água'].leafletLayer,
+            "Municípios": originalLayers['Municípios'].leafletLayer,
+            "Regiões de Integração": originalLayers['Regiões de Integração'].leafletLayer,
+            "UCs Estaduais": originalLayers['UCs Estaduais'].leafletLayer,
+            "Terras Indígenas": originalLayers['Terras Indígenas'].leafletLayer,
+            "UCs Federais": originalLayers['UCs Federais'].leafletLayer,
+            "Quilombos Estaduais": originalLayers['Quilombos Estaduais'].leafletLayer,
+            "Quilombos Federais": originalLayers['Quilombos Federais'].leafletLayer,
+        };
+        L.control.layers(baseLayers, overlayLayers).addTo(map);
+
+        originalLayers['Quilombos Federais']?.leafletLayer.addTo(map);
+        originalLayers['Quilombos Estaduais']?.leafletLayer.addTo(map);
+        originalLayers['UCs Federais']?.leafletLayer.addTo(map);
+        originalLayers['Terras Indígenas']?.leafletLayer.addTo(map);
+        originalLayers['UCs Estaduais']?.leafletLayer.addTo(map);
+        originalLayers['Regiões de Integração']?.leafletLayer.addTo(map);
+        originalLayers['Municípios']?.leafletLayer.addTo(map);
+        originalLayers['Massa d\'Água']?.leafletLayer.addTo(map);
+        
+        Object.keys(originalLayers).forEach(layerName => {
+            currentMapLayers[layerName] = originalLayers[layerName].leafletLayer;
+        });
+
+        createLegend();
+        map.on('overlayadd', updateLegend);
+        map.on('overlayremove', updateLegend);
+        map.on('baselayerchange', updateLegend);
+        map.on('layeradd', updateLegend);
+        map.on('layerremove', updateLegend);
+        
+        const filterableLayers = { ...originalLayers };
+        delete filterableLayers['Massa d\'Água'];
+
+        populateLayerSelect(filterableLayers);
+        updateCount(0);
+        dlBtn.style.display = 'none';
+
+        if (originalLayers['Municípios'].leafletLayer && originalLayers['Municípios'].leafletLayer.getBounds().isValid()) {
+            map.fitBounds(originalLayers['Municípios'].leafletLayer.getBounds());
+            originalMapBounds = map.getBounds();
+        }
+        
+        map.on('click', showPopupForLayers);
+      } catch (err) {
+        alert('Falha ao carregar os dados geoespaciais: ' + err.message);
+        console.error(err);
+      }
+
+      /* ---------- Eventos UI ---------- */
+      identifyBtn.addEventListener('click', () => {
+          identifyActive = !identifyActive;
+          identifyBtn.classList.toggle('active');
+          if (identifyActive) {
+              map.getContainer().style.cursor = 'crosshair';
+              identifyMenu.classList.add('active');
+              identifyCheckboxes.innerHTML = '';
+              Object.keys(originalLayers).forEach(layerName => {
+                  if (layerName !== 'Massa d\'Água') { 
+                      const label = document.createElement('label');
+                      label.className = 'flex items-center space-x-2';
+                      label.innerHTML = `
+                          <input type="checkbox" id="identify-${layerName}" checked class="form-checkbox text-blue-600">
+                          <span>${layerName}</span>
+                      `;
+                      identifyCheckboxes.appendChild(label);
+                  }
+              });
+          } else {
+              map.getContainer().style.cursor = '';
+              identifyMenu.classList.remove('active');
+          }
+      });
+
+      exitIdentifyBtn.addEventListener('click', () => {
+          identifyActive = false;
+          identifyBtn.classList.remove('active');
+          map.getContainer().style.cursor = '';
+          identifyMenu.classList.remove('active');
+      });
+
+      layerSel.addEventListener('change', () => {
+        const layerName = layerSel.value;
+        activeLayerName = layerName;
+        if (!layerName) {
+            colSel.innerHTML = '';
+            colSel.disabled = true;
+            valSel.innerHTML = '';
+            valSel.disabled = true;
+            updateCount(0);
+            dlBtn.style.display = 'none';
+            clearBtn.click();
+            return;
+        }
+        populateColumns(layerName);
+        valSel.innerHTML = '';
+        valSel.disabled = true;
+      });
+
+      colSel.addEventListener('change', () => {
+        const col = colSel.value;
+        if (!col) {
+          valSel.innerHTML = '';
+          valSel.disabled = true;
+          updateCount(0);
+          dlBtn.style.display = 'none';
+          return;
+        }
+        populateValues(activeLayerName, col);
+        valSel.disabled = false;
+        valSel.value = '__ALL__';
+      });
+
+      applyBtn.addEventListener('click', () => {
+        if (!activeLayerName || valSel.value === '') return;
+        const col = colSel.value;
+        const val = valSel.value;
+        const filtered = filterFC(activeLayerName, col, val);
+        refreshMap(filtered, activeLayerName);
+      });
+      
+      valSel.addEventListener('change', () => {
+        // Nada acontece aqui, o filtro só será aplicado ao clicar no botão.
+      });
+
+      clearBtn.addEventListener('click', () => {
+        map.eachLayer(l => {
+            if (l instanceof L.GeoJSON) {
+                map.removeLayer(l);
+            }
+        });
+        
+        layerSel.value = '';
+        colSel.value = '';
+        colSel.disabled = true;
+        valSel.value = '';
+        valSel.disabled = true;
+        activeLayerName = null;
+        updateCount(0);
+        dlBtn.style.display = 'none';
+        
+        originalLayers['Quilombos Federais']?.leafletLayer.addTo(map);
+        originalLayers['Quilombos Estaduais']?.leafletLayer.addTo(map);
+        originalLayers['UCs Federais']?.leafletLayer.addTo(map);
+        originalLayers['Terras Indígenas']?.leafletLayer.addTo(map);
+        originalLayers['UCs Estaduais']?.leafletLayer.addTo(map);
+        originalLayers['Regiões de Integração']?.leafletLayer.addTo(map);
+        originalLayers['Municípios']?.leafletLayer.addTo(map);
+        originalLayers['Massa d\'Água']?.leafletLayer.addTo(map);
+
+        currentMapLayers = { ...originalLayers };
+
+        if (originalMapBounds) {
+            map.flyToBounds(originalMapBounds);
+        }
+      });
+      
+      // Adiciona eventos de mouse para o menu de identificação
+      const identifyMenuContainer = document.getElementById('identifyControl');
+      let identifyMenuTimeout;
+      identifyMenuContainer.addEventListener('mouseenter', () => {
+        clearTimeout(identifyMenuTimeout);
+        identifyMenu.classList.add('active');
+      });
+      identifyMenuContainer.addEventListener('mouseleave', () => {
+        identifyMenuTimeout = setTimeout(() => {
+          identifyMenu.classList.remove('active');
+        }, 300); // 300ms de delay para evitar que o menu desapareça acidentalmente
+      });
+
+      const aboutAppBtn = document.getElementById('aboutAppBtn');
+      const aboutAppModal = document.getElementById('aboutAppModal');
+      const closeModalBtn = document.getElementById('closeModalBtn');
+      aboutAppBtn.addEventListener('click', ()=>aboutAppModal.classList.add('show'));
+      closeModalBtn.addEventListener('click', ()=>aboutAppModal.classList.remove('show'));
+      aboutAppModal.addEventListener('click', (e)=>{ if (e.target===aboutAppModal) aboutAppModal.classList.remove('show'); });
+    };
+  </script>
+</body>
+</html>
