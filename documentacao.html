@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Documentação - Visualizador Geoespacial IDEFLOR-Bio</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 960px;
+        }
+        .section-title {
+            border-left: 4px solid #1e40af;
+            padding-left: 1rem;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .icon-container {
+            color: #1e40af;
+            width: 2.5rem;
+            height: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+            background-color: #e0e7ff;
+        }
+        .back-button {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body class="p-8">
+
+    <a href="https://ngeo-ideflor-bio.github.io/visualizador/" class="back-button bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transition duration-300 flex items-center">
+        <i class="fas fa-arrow-left mr-2"></i> Voltar ao Mapa
+    </a>
+
+    <main class="container mx-auto mt-16">
+        <header class="text-center mb-12">
+            <img src="https://ngeo-ideflor-bio.github.io/visualizador/logo_ngeo.png" alt="Logo NGEO IDEFLOR-Bio" class="h-20 mx-auto mb-4" />
+            <h1 class="text-4xl md:text-5xl font-extrabold text-blue-800 mb-2">Visualizador Geoespacial</h1>
+            <p class="text-xl text-gray-600">Documentação do Aplicativo Web</p>
+        </header>
+
+        <section id="visao-geral" class="mb-12">
+            <h2 class="text-3xl font-bold text-blue-800 section-title mb-6">Visão Geral</h2>
+            <p class="text-lg text-gray-700 mb-4">
+                O <strong>Visualizador Geoespacial do IDEFLOR-Bio</strong> é uma ferramenta web interativa, projetada para explorar e analisar dados geográficos do estado do Pará. Ele oferece acesso fácil a informações importantes como limites de municípios, Unidades de Conservação, terras indígenas e massas d'água, tudo em um ambiente de mapa dinâmico e fácil de usar.
+            </p>
+            <div class="card p-6">
+                <p class="text-sm italic text-gray-500 mb-2">
+                    Este aplicativo foi desenvolvido com o intuito de visualizar áreas protegidas de diversas bases de dados públicas em um único portal. O objetivo é auxiliar e otimizar a visualização desses dados durante reuniões.
+                </p>
+            </div>
+            <img src="https://ngeo-ideflor-bio.github.io/visualizador/demo/inicial.png" alt="Interface Inicial do Aplicativo" class="mt-8 rounded-lg shadow-lg border border-gray-200" />
+        </section>
+
+        <section id="funcionalidades" class="mb-12">
+            <h2 class="text-3xl font-bold text-blue-800 section-title mb-8">Funcionalidades</h2>
+
+            <div class="card p-6 mb-8">
+                <h3 class="font-bold text-xl text-blue-700 mb-2">Seletor de Camadas</h3>
+                <p class="text-gray-700 mb-4">Ative ou desative diferentes camadas do mapa, como municípios, regiões de integração, UCs estaduais e federais, terras indígenas e territórios quilombolas. Este controle permite personalizar quais dados são exibidos no mapa.</p>
+                <img src="https://ngeo-ideflor-bio.github.io/visualizador/demo/seletor_camadas.png" alt="Exemplo do Seletor de Camadas" class="rounded-lg shadow-md border border-gray-200" />
+            </div>
+
+            <div class="card p-6 mb-8">
+                <h3 class="font-bold text-xl text-blue-700 mb-2">Visualização e Legenda</h3>
+                <p class="text-gray-700 mb-4">Uma legenda dinâmica no canto inferior direito mostra as cores e símbolos das camadas visíveis. A legenda se atualiza automaticamente conforme as camadas são ativadas ou desativadas, garantindo que você sempre saiba o que está vendo.</p>
+                <img src="https://ngeo-ideflor-bio.github.io/visualizador/demo/legenda.png" alt="Exemplo da Legenda Dinâmica" class="rounded-lg shadow-md border border-gray-200" />
+            </div>
+
+            <div class="card p-6 mb-8">
+                <h3 class="font-bold text-xl text-blue-700 mb-2">Filtro por Atributos</h3>
+                <p class="text-gray-700 mb-4">A janela de filtro no canto superior esquerdo permite que os usuários selecionem uma camada, escolham uma coluna de seus atributos e apliquem um filtro com base em um valor específico. Isso é ideal para isolar e visualizar feições com características em comum para análises mais precisas.</p>
+                <img src="https://ngeo-ideflor-bio.github.io/visualizador/demo/filtro.png" alt="Exemplo do Filtro de Atributos" class="rounded-lg shadow-md border border-gray-200" />
+            </div>
+
+            <div class="card p-6 mb-8">
+                <h3 class="font-bold text-xl text-blue-700 mb-2">Ferramenta de Identificação (`Identify`)</h3>
+                <p class="text-gray-700 mb-4">Similar a um SIG (Sistema de Informação Geográfica), a ferramenta de identificação permite ao usuário clicar em qualquer ponto do mapa para obter informações detalhadas sobre todas as camadas visíveis naquele local.</p>
+                <img src="https://ngeo-ideflor-bio.github.io/visualizador/demo/identificador.png" alt="Exemplo da Ferramenta de Identificação" class="rounded-lg shadow-md border border-gray-200" />
+            </div>
+
+            <div class="card p-6 mb-8">
+                <h3 class="font-bold text-xl text-blue-700 mb-2">Download de Dados</h3>
+                <p class="text-gray-700 mb-4">Após aplicar um filtro, é possível baixar os dados filtrados no formato GeoJSON para uso em outras plataformas e softwares de geoprocessamento. Isso facilita a exportação de dados para análise offline ou para integração com outras ferramentas.</p>
+                <img src="https://ngeo-ideflor-bio.github.io/visualizador/demo/download.png" alt="Exemplo do Botão de Download" class="rounded-lg shadow-md border border-gray-200" />
+            </div>
+        </section>
+
+        <section id="tecnologias" class="mb-12">
+            <h2 class="text-3xl font-bold text-blue-800 section-title mb-6">Tecnologias Utilizadas</h2>
+            <p class="text-gray-700 mb-6">O aplicativo foi construído utilizando uma combinação de tecnologias web modernas, otimizadas para visualização de dados geoespaciais em navegadores:</p>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 text-gray-800">
+                <div class="bg-gray-200 p-4 rounded-lg flex items-center space-x-4">
+                    <i class="fa-solid fa-globe text-2xl text-blue-700"></i>
+                    <div>
+                        <span class="font-semibold">HTML, CSS & JS</span>
+                        <p class="text-sm">Estrutura e lógica do aplicativo.</p>
+                    </div>
+                </div>
+                <div class="bg-gray-200 p-4 rounded-lg flex items-center space-x-4">
+                    <i class="fa-solid fa-map text-2xl text-green-700"></i>
+                    <div>
+                        <span class="font-semibold">Leaflet.js</span>
+                        <p class="text-sm">Biblioteca de mapas interativos de código aberto.</p>
+                    </div>
+                </div>
+                <div class="bg-gray-200 p-4 rounded-lg flex items-center space-x-4">
+                    <i class="fa-solid fa-bolt text-2xl text-yellow-500"></i>
+                    <div>
+                        <span class="font-semibold">Vector Tiles & Leaflet.VectorGrid</span>
+                        <p class="text-sm">Formato otimizado para carregamento e navegação de grandes volumes de dados de massa d'água.</p>
+                    </div>
+                </div>
+                <div class="bg-gray-200 p-4 rounded-lg flex items-center space-x-4">
+                    <i class="fa-solid fa-map-pin text-2xl text-red-600"></i>
+                    <div>
+                        <span class="font-semibold">GeoJSON</span>
+                        <p class="text-sm">Formato padrão para as camadas de limite.</p>
+                    </div>
+                </div>
+                <div class="bg-gray-200 p-4 rounded-lg flex items-center space-x-4">
+                    <i class="fa-solid fa-code text-2xl text-blue-500"></i>
+                    <div>
+                        <span class="font-semibold">Tailwind CSS</span>
+                        <p class="text-sm">Framework utilitário para o design e a estilização.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="text-center text-gray-500 text-sm py-8 border-t border-gray-300 mt-12">
+            © 2024 IDEFLOR-Bio. Todos os direitos reservados.
+        </footer>
+    </main>
+
+</body>
+</html>

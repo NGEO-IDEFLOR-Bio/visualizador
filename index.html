@@ -111,18 +111,16 @@
     <div class="modal-content">
       <h2 class="text-2xl font-bold text-gray-800 mb-4">Sobre o Aplicativo</h2>
       <p class="text-gray-700 mb-4">
-        Este mapa web foi elaborado para atender a demanda de produção de geoinformações do processo <strong>2025/2460154 / IDEFLORBIO</strong>. O objetivo é facilitar a visualização e a pesquisa das áreas de municípios, Unidades de Conservação e outras camadas relevantes.
+        Este aplicativo foi desenvolvido com o intuito de visualizar áreas protegidas de diversas bases de dados públicas em um único portal. O objetivo é auxiliar e otimizar a visualização desses dados durante reuniões.
       </p>
-      <hr class="my-4">
-      <p class="text-sm text-gray-600 mb-2">
-        Desenvolvido por
-        <a href="https://samuel-c-santos.github.io/" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline">
-          Samuel C. Santos – Coordenador de Geotecnologias do IDEFLOR-Bio
-        </a>.
-      </p>
-      <button id="closeModalBtn" class="mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">
-        Fechar
-      </button>
+      <div class="flex flex-col sm:flex-row gap-4 mt-6">
+        <a href="documentacao.html" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out text-center">
+          Ver documentação completa
+        </a>
+        <button id="closeModalBtn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">
+          Fechar
+        </button>
+      </div>
     </div>
   </div>
 
@@ -377,22 +375,23 @@
 
         const layerOptions = { pane: originalLayers[layerName].pane, style: styleFunc, onEachFeature: onEachFeature };
         
-        currentFilteredFC = null;
+        // Reinicializa o FeatureCollection para o download
+        currentFilteredFC = { type: 'FeatureCollection', features: [] };
+
+        // Adiciona a camada de referência filtrada ao mapa
+        const filteredLayer = L.geoJSON(fc, layerOptions).addTo(map);
+        filteredLayer.bringToFront();
+        fitToLayer(filteredLayer);
+        
+        currentFilteredFC.features.push(...fc.features);
 
         // Caso de filtro por sobreposição (multi-camadas)
         if (layerName === 'Municípios' || layerName === 'Regiões de Integração') {
-            currentFilteredFC = { type: 'FeatureCollection', features: [] };
-            let totalCount = 0;
+            const totalFeatures = fc.features.length;
             
-            // Adiciona a camada de referência filtrada ao mapa
-            const refLayer = L.geoJSON(fc, layerOptions).addTo(map);
-            refLayer.bringToFront();
-            fitToLayer(refLayer);
-            currentFilteredFC.features.push(...fc.features);
-            currentMapLayers[layerName] = refLayer;
-
             // Filtra e adiciona as outras camadas
             const otherLayers = Object.keys(originalLayers).filter(name => name !== 'Municípios' && name !== 'Regiões de Integração' && name !== 'Massa d\'Água');
+            
             otherLayers.forEach(otherLayerName => {
                 const otherLayerData = originalLayers[otherLayerName];
                 const column = layerName === 'Municípios' ? 'Municipios_lista' : 'RegioesIntegracao_lista';
@@ -409,19 +408,11 @@
                     }).addTo(map);
                     newLayer.bringToFront();
                     currentFilteredFC.features.push(...filteredFeatures);
-                    totalCount += filteredFeatures.length;
-                    currentMapLayers[otherLayerName] = newLayer;
                 }
             });
-            updateCount(totalCount);
-
+            updateCount(currentFilteredFC.features.length);
         } else { // Caso de filtro por atributo (single-camada)
-            const filteredLayer = L.geoJSON(fc, layerOptions).addTo(map);
-            filteredLayer.bringToFront();
-            fitToLayer(filteredLayer);
             updateCount(fc.features.length);
-            currentFilteredFC = fc;
-            currentMapLayers[layerName] = filteredLayer;
         }
 
         buildDownload(currentFilteredFC);
@@ -651,11 +642,20 @@
       });
 
       applyBtn.addEventListener('click', () => {
-        if (!activeLayerName || valSel.value === '') return;
+        // Verifica se uma camada e um valor foram selecionados
+        if (!activeLayerName || valSel.value === '') {
+          // Se não houver filtro, esconde o botão de download
+          dlBtn.style.display = 'none';
+          return;
+        }
+
         const col = colSel.value;
         const val = valSel.value;
         const filtered = filterFC(activeLayerName, col, val);
         refreshMap(filtered, activeLayerName);
+
+        // Torna o botão de download visível após o filtro ser aplicado
+        dlBtn.style.display = 'inline'; // Ou 'block', dependendo do seu CSS
       });
       
       valSel.addEventListener('change', () => {
@@ -707,13 +707,26 @@
         }, 300); // 300ms de delay para evitar que o menu desapareça acidentalmente
       });
 
+      /* ---------- Modal para informações sobre o app ---------- */
       const aboutAppBtn = document.getElementById('aboutAppBtn');
       const aboutAppModal = document.getElementById('aboutAppModal');
       const closeModalBtn = document.getElementById('closeModalBtn');
-      aboutAppBtn.addEventListener('click', ()=>aboutAppModal.classList.add('show'));
-      closeModalBtn.addEventListener('click', ()=>aboutAppModal.classList.remove('show'));
-      aboutAppModal.addEventListener('click', (e)=>{ if (e.target===aboutAppModal) aboutAppModal.classList.remove('show'); });
-    };
-  </script>
+      const docLinkBtn = document.getElementById('docLinkBtn'); // Adicionar um ID ao link na modal
+
+      aboutAppBtn.addEventListener('click', () => {
+        aboutAppModal.classList.add('show');
+      });
+
+      closeModalBtn.addEventListener('click', () => {
+        aboutAppModal.classList.remove('show');
+      });
+
+      aboutAppModal.addEventListener('click', (e) => {
+        if (e.target === aboutAppModal) {
+          aboutAppModal.classList.remove('show');
+        }
+      });
+      }; <!-- fecha window.onload -->
+      </script>
 </body>
 </html>
