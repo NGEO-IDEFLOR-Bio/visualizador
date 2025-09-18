@@ -40,6 +40,14 @@ A janela de filtro no canto superior esquerdo permite que os usuários selecione
 
 Similar a um SIG (Sistema de Informação Geográfica), a ferramenta de identificação permite ao usuário clicar em qualquer ponto do mapa para obter informações de todas as camadas visíveis naquele local.
 
+### 5. Reordenação de Camadas
+
+O painel de controle agora possui uma lista interativa que permite ao usuário reordenar as camadas temáticas. Basta clicar e arrastar uma camada para a posição desejada para alterar a ordem de exibição no mapa, definindo quais polígonos aparecem na frente dos outros.
+
+**Screenshot da Reordenação de Camadas:**
+
+![Reordenação de Camadas](demo/ordenar_camadas.png)
+
 ---
 
 ## Tecnologias Utilizadas
