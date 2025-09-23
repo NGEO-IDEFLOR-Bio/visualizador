@@ -24,12 +24,23 @@
       overflow-y: auto; /* Adiciona barra de rolagem se necessário */
     }
 
-    #identifyControl { 
-      position: absolute; 
-      top: 5rem; 
-      left: 21.5rem; /* Posição ajustada */
-      z-index: 5000; 
+    /* INÍCIO DA MODIFICAÇÃO CSS */
+    #mapActionControls {
+      position: absolute;
+      top: 5rem;
+      left: 21.5rem; /* Posição original do botão 'identify' */
+      z-index: 5000;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
     }
+    
+    #toggleOutlineBtn.active {
+      background-color: #dbeafe; /* Azul claro para indicar que está ativo */
+      border: 1px solid #3b82f6;
+    }
+    /* FIM DA MODIFICAÇÃO CSS */
+
     #identifyControl.active { cursor: crosshair; }
     #identifyMenu {
         position: absolute;
@@ -93,6 +104,11 @@
       background-color: #d1d5db !important;
       opacity: 0.7;
     }
+    
+    .leaflet-control-layers-expanded {
+        max-height: 300px;
+        overflow-y: auto;
+    }
   </style>
 </head>
 <body class="bg-gray-100">
@@ -132,18 +148,26 @@
       </ul>
   </div>
   
-  <div id="identifyControl" class="relative">
-      <button id="identifyBtn" class="bg-white p-2 rounded-lg shadow-md hover:bg-gray-200 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-      </button>
-      <div id="identifyMenu" class="absolute bg-white p-2 rounded-lg shadow-lg w-48 space-y-1 text-xs">
-          <h4 class="font-semibold text-gray-700">Identificar Camadas:</h4>
-          <div id="identifyCheckboxes"></div>
-          <button id="exitIdentifyBtn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded-lg shadow-md transition duration-300 ease-in-out text-xs">Sair</button>
+  <div id="mapActionControls" class="absolute top-5rem left-21.5rem z-5000 flex flex-col gap-2">
+      <div id="identifyControl" class="relative">
+            <button id="identifyBtn" class="bg-white p-2 rounded-lg shadow-md hover:bg-gray-200 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75" title="Identificar Feição">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+            </button>
+            <div id="identifyMenu" class="absolute bg-white p-2 rounded-lg shadow-lg w-48 space-y-1 text-xs">
+                  <h4 class="font-semibold text-gray-700">Identificar Camadas:</h4>
+                  <div id="identifyCheckboxes"></div>
+                  <button id="exitIdentifyBtn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded-lg shadow-md transition duration-300 ease-in-out text-xs">Sair</button>
+            </div>
       </div>
-  </div>
+
+        <button id="toggleOutlineBtn" class="bg-white p-2 rounded-lg shadow-md hover:bg-gray-200 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75" title="Alternar Modo Contorno">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            </svg>
+      </button>
+   </div>
 
   <div id="map" class="relative"></div>
 
@@ -174,7 +198,8 @@
     let identifyActive = false;
     let filteredLayerGroup = L.layerGroup();
     let isFilterActive = false;
-    let originalMapBounds; // Remova a atribuição aqui
+    let originalMapBounds;
+    let isOutlineModeActive = false;
 
     /* ---------- UI refs ---------- */
     const layerSel = document.getElementById('layerSelect');
@@ -190,6 +215,7 @@
     const identifyMenu = document.getElementById('identifyMenu');
     const identifyCheckboxes = document.getElementById('identifyCheckboxes');
     const exitIdentifyBtn = document.getElementById('exitIdentifyBtn');
+    const toggleOutlineBtn = document.getElementById('toggleOutlineBtn');
 
 
     /* ---------- Utils do filtro ---------- */
@@ -274,6 +300,7 @@
       legendControl.addTo(map);
       updateLegend();
     }
+// SUBSTITUIR ESTA FUNÇÃO
     function updateLegend(){
       const el = document.querySelector('.legend'); if(!el) return;
       let html = '<strong>Legenda</strong><br>';
@@ -291,7 +318,13 @@
 
       layers.forEach(l => {
         if (l.layerRef && map.hasLayer(l.layerRef)) {
-          if (l.type === 'polygon') { html += `<i style="background:${l.color}"></i> ${l.name}<br>`; }
+          if (l.type === 'polygon') {
+            if(isOutlineModeActive){
+              html += `<i style="background:transparent; border: 2px solid ${l.color};"></i> ${l.name}<br>`;
+            } else {
+              html += `<i style="background:${l.color}"></i> ${l.name}<br>`; 
+            }
+          }
           else if (l.type === 'line') { html += `<div class="line" style="border:3px solid ${l.color}; background:transparent"></div> ${l.name}<br>`; }
           else if (l.type === 'dashed_line') { html += `<div class="line" style="border:2px dashed ${l.color}; background:transparent"></div> ${l.name}<br>`; }
         }
@@ -402,6 +435,7 @@
       };
     }
 
+// SUBSTITUIR ESTA FUNÇÃO
     function refreshMap(fc, layerName) {
         // 1. Limpa camadas GeoJSON existentes do mapa
         map.eachLayer(l => {
@@ -419,7 +453,14 @@
         // Adiciona a camada principal (ex: o município) ao grupo
         const styleFunc = originalLayers[layerName]?.styleFunc;
         if (!styleFunc) return;
-        const layerOptions = { pane: originalLayers[layerName].pane, style: styleFunc, onEachFeature: onEachFeature };
+
+        let primaryStyle = styleFunc();
+        if (isOutlineModeActive) {
+            if(primaryStyle.fillColor && primaryStyle.fillColor !== 'transparent') {
+                primaryStyle = { ...primaryStyle, color: primaryStyle.fillColor, fillOpacity: 0, weight: 3 };
+            }
+        }
+        const layerOptions = { pane: originalLayers[layerName].pane, style: primaryStyle, onEachFeature: onEachFeature };
         
         const primaryFilteredLayer = L.geoJSON(fc, layerOptions);
         filteredResultsGroup.addLayer(primaryFilteredLayer);
@@ -438,12 +479,17 @@
                 });
                 
                 if (filteredFeatures.length > 0) {
+                    let otherStyle = otherLayerData.styleFunc();
+                    if(isOutlineModeActive) {
+                        if(otherStyle.fillColor && otherStyle.fillColor !== 'transparent') {
+                           otherStyle = { ...otherStyle, color: otherStyle.fillColor, fillOpacity: 0, weight: 3 };
+                        }
+                    }
                     const newLayer = L.geoJSON({ type: 'FeatureCollection', features: filteredFeatures }, {
                         pane: otherLayerData.pane,
-                        style: otherLayerData.styleFunc,
+                        style: otherStyle,
                         onEachFeature: onEachFeature
                     });
-                    // Adiciona as camadas secundárias ao mesmo grupo
                     filteredResultsGroup.addLayer(newLayer);
                     currentFilteredFC.features.push(...filteredFeatures);
                 }
@@ -515,22 +561,72 @@
 
         updateLegend();
     }
+// ADICIONAR ESTA NOVA FUNÇÃO
+    function toggleOutlineMode() {
+        isOutlineModeActive = !isOutlineModeActive; // Inverte o estado
+        toggleOutlineBtn.classList.toggle('active', isOutlineModeActive); // Atualiza a aparência do botão
 
+        // Itera sobre todas as camadas para aplicar o novo estilo
+        Object.values(originalLayers).forEach(layerData => {
+            if (layerData.leafletLayer && typeof layerData.leafletLayer.setStyle === 'function' && layerData.styleFunc) {
+                const originalStyle = layerData.styleFunc();
+                let newStyle;
+
+                if (isOutlineModeActive) {
+                    // Se a camada tem cor de preenchimento, cria o estilo de contorno
+                    if (originalStyle.fillColor && originalStyle.fillColor !== 'transparent') {
+                        newStyle = {
+                            ...originalStyle,
+                            color: originalStyle.fillColor, // Usa a cor de preenchimento como cor do contorno
+                            fillOpacity: 0,
+                            weight: 3 // Contorno mais espesso
+                        };
+                    } else {
+                        newStyle = originalStyle; // Mantém o estilo para camadas que já são apenas linhas
+                    }
+                } else {
+                    // Retorna ao estilo original
+                    newStyle = originalStyle;
+                }
+                layerData.leafletLayer.setStyle(newStyle);
+            }
+        });
+
+        updateLegend(); // Atualiza a legenda para refletir a mudança
+    }
 
     /* ---------- Boot ---------- */
     window.onload = async function () {
         const googleRelief = L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', { maxZoom: 18, attribution: '&copy; Google' });
         const googleSat = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { maxZoom: 20, attribution: '&copy; Google' });
-        const bingSat = L.tileLayer('https://ecn.t3.tiles.virtualearth.net/tiles/a{q}.jpeg?g=0', { attribution: '&copy; Bing Maps', maxZoom: 18 });
-        const sentinel2 = L.tileLayer.wms('https://tiles.maps.eox.at/wms', { layers: 's2cloudless-2024_3857', format: 'image/jpeg', attribution: '© EOX IT Services' });
+        const bingSat = L.tileLayer('https://ecn.t3.tiles.virtualearth.net/tiles/a{q}.jpeg?g=1', { attribution: '&copy; Bing Maps', maxZoom: 19, subdomains:['t0','t1','t2','t3'] });        const sentinel2 = L.tileLayer.wms('https://tiles.maps.eox.at/wms', { layers: 's2cloudless-2024_3857', format: 'image/jpeg', attribution: '© EOX IT Services' });
         const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' });
         const cartoDbVoy = L.tileLayer('https://a.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}.png', { maxZoom: 20, attribution: '&copy; CARTO' });
-
+        const esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+        });
+        const sentinel2023 = L.tileLayer.wms('https://tiles.maps.eox.at/wms', { layers: 's2cloudless-2023_3857', format: 'image/jpeg', attribution: '© EOX IT Services' });
+        const sentinel2022 = L.tileLayer.wms('https://tiles.maps.eox.at/wms', { layers: 's2cloudless-2022_3857', format: 'image/jpeg', attribution: '© EOX IT Services' });
+        const sentinel2021 = L.tileLayer.wms('https://tiles.maps.eox.at/wms', { layers: 's2cloudless-2021_3857', format: 'image/jpeg', attribution: '© EOX IT Services' });
+        const sentinel2020 = L.tileLayer.wms('https://tiles.maps.eox.at/wms', { layers: 's2cloudless-2020_3857', format: 'image/jpeg', attribution: '© EOX IT Services' });
+        const sentinel2019 = L.tileLayer.wms('https://tiles.maps.eox.at/wms', { layers: 's2cloudless-2019_3857', format: 'image/jpeg', attribution: '© EOX IT Services' });
+        const sentinel2018 = L.tileLayer.wms('https://tiles.maps.eox.at/wms', { layers: 's2cloudless-2018_3857', format: 'image/jpeg', attribution: '© EOX IT Services' });
+        const sentinel2017 = L.tileLayer.wms('https://tiles.maps.eox.at/wms', { layers: 's2cloudless-2017_3857', format: 'image/jpeg', attribution: '© EOX IT Services' });
+        const sentinel2016 = L.tileLayer.wms('https://tiles.maps.eox.at/wms', { layers: 's2cloudless_3857', format: 'image/jpeg', attribution: '© EOX IT Services' });
         const baseLayers = {
             "Google Relevo com Rótulos": googleRelief,
             "Google Satellite": googleSat,
+            "ESRI World Imagery": esriSat,
             "Bing Satellite": bingSat,
-            "Sentinel-2 cloudless layer": sentinel2,
+            "Sentinel-2 2024 (sem nuvens)": sentinel2,
+            "Sentinel-2 2023 (sem nuvens)": sentinel2023,
+            "Sentinel-2 2022 (sem nuvens)": sentinel2022,
+            "Sentinel-2 2021 (sem nuvens)": sentinel2021,
+            "Sentinel-2 2020 (sem nuvens)": sentinel2020,
+            "Sentinel-2 2019 (sem nuvens)": sentinel2019,
+            "Sentinel-2 2018 (sem nuvens)": sentinel2018,
+            "Sentinel-2 2017 (sem nuvens)": sentinel2017,
+            "Sentinel-2 2016 (sem nuvens)": sentinel2016,
             "OpenStreetMap": osm,
             "CartoDB Voyager": cartoDbVoy
         };
@@ -790,6 +886,7 @@
             identifyMenu.classList.remove('active');
           }, 300); // 300ms de delay para evitar que o menu desapareça acidentalmente
         });
+        toggleOutlineBtn.addEventListener('click', toggleOutlineMode);
 
         /* ---------- Modal para informações sobre o app ---------- */
         const aboutAppBtn = document.getElementById('aboutAppBtn');
