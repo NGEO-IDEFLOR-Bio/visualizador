@@ -689,7 +689,7 @@
       };
 
       map = L.map('map', { center: [-5.0, -50.0], zoom: 6, layers: [cartoVoyager], zoomControl: false });
-      L.control.zoom({ position: 'bottomright' }).addTo(map);
+      L.control.zoom({ position: 'bottomleft' }).addTo(map);
 
       try {
         const [municipiosRes, ucsEstaduaisRes, ucsFederaisRes, regioesRes, quilombosEstaduaisRes, quilombosFederaisRes, terrasIndigenasRes] = await Promise.all([
