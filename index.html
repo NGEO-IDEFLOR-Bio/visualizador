@@ -1,207 +1,305 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-br" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Visualizador Geoespacial - IDEFLOR-Bio</title>
+
+  <!-- Typography: Plus Jakarta Sans & Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Leaflet CSS & JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- VectorGrid & SortableJS -->
   <script src="https://unpkg.com/leaflet.vectorgrid@1.3.0/dist/leaflet.vectorgrid.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            heading: ['Plus Jakarta Sans', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            amazon: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#10b981',
+              600: '#059669',
+              800: '#065f46',
+              900: '#064e3b',
+              950: '#032e23',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
   <style>
-    html, body { margin: 0; height: 100%; font-family: 'Inter', sans-serif; overflow: hidden; }
-    #map { height: calc(100vh - 64px); width: 100%; z-index: 0; }
-    .leaflet-control-container .leaflet-control-attribution { font-size: 0.75rem; }
+    html, body { margin: 0; height: 100%; font-family: 'Inter', sans-serif; overflow: hidden; background-color: #0f172a; }
+    #map { height: calc(100vh - 4rem); width: 100%; z-index: 0; }
+    .leaflet-control-container .leaflet-control-attribution { font-size: 0.7rem; opacity: 0.8; }
 
-    /* Estilos para o painel de controle */
-    #searchControl { 
-      position: absolute; 
-      top: 5rem; 
-      left: .5rem; 
-      z-index: 5000;
-      max-height: calc(100vh - 6rem); /* Altura máxima ajustada */
-      overflow-y: auto; /* Adiciona barra de rolagem se necessário */
+    /* Custom Glassmorphism Panels */
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(51, 65, 85, 0.6);
+    }
+    .light .glass-panel {
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(226, 232, 240, 0.8);
     }
 
-    /* INÍCIO DA MODIFICAÇÃO CSS */
-    #mapActionControls {
-      position: absolute;
-      top: 5rem;
-      left: 21.5rem; /* Posição original do botão 'identify' */
-      z-index: 5000;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-    
-    #toggleOutlineBtn.active {
-      background-color: #dbeafe; /* Azul claro para indicar que está ativo */
-      border: 1px solid #3b82f6;
-    }
-    /* FIM DA MODIFICAÇÃO CSS */
-
-    #identifyControl.active { cursor: crosshair; }
-    #identifyMenu {
-        position: absolute;
-        top: 2rem;
-        left: 0;
-        z-index: 5001;
-        background-color: white;
-        padding: 0.5rem;
-        border-radius: 0.5rem;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1-px rgba(0,0,0,0.06);
-        display: none;
-    }
-    #identifyMenu.active { display: block; }
-
+    /* Custom Legend */
     .legend {
-      background-color: white; padding: 10px; border-radius: 5px;
-      box-shadow: 0 1px 5px rgba(0,0,0,0.4); line-height: 22px; color: #555;
+      background: rgba(15, 23, 42, 0.9) !important;
+      color: #f1f5f9 !important;
+      padding: 12px 16px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(51, 65, 85, 0.6);
+      font-size: 0.75rem;
+      line-height: 22px;
     }
-    .legend i { width: 18px; height: 18px; float: left; margin-right: 8px; opacity: 1; border-radius: 4px; }
-    .legend .line { width: 18px; height: 18px; float: left; margin-right: 8px; opacity: 1; }
+    .light .legend {
+      background: rgba(255, 255, 255, 0.95) !important;
+      color: #1e293b !important;
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    .legend i { width: 16px; height: 16px; float: left; margin-right: 8px; margin-top: 3px; border-radius: 4px; }
+    .legend .line { width: 16px; height: 16px; float: left; margin-right: 8px; margin-top: 3px; }
     .legend .line i { border: 2px solid; opacity: 1; border-radius: 0; }
 
-    .modal-overlay {
-      position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.5);
-      display: flex; justify-content: center; align-items: center;
-      z-index: 2147483647; opacity: 0; visibility: hidden;
-      transition: opacity 0.3s ease, visibility 0.3s ease;
-    }
-    .modal-overlay.show { opacity: 1; visibility: visible; }
-    .modal-content {
-      background-color: white; padding: 24px; border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); max-width: 90%; max-height: 90%;
-      overflow-y: auto; transform: translateY(-20px); transition: transform 0.3s ease;
-    }
-    .modal-overlay.show .modal-content { transform: translateY(0); }
-
-    /* Estilo para a lista de reordenação */
-    #layerOrderList {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
+    /* Sortable list styling */
     #layerOrderList li {
-      padding: 0.5rem; /* Padding ajustado */
-      background-color: #f3f4f6;
-      border: 1px solid #e5e7eb;
-      border-radius: 0.5rem;
-      cursor: grab;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
       transition: all 0.2s ease;
-      font-size: 0.875rem; /* Fonte ajustada */
     }
     #layerOrderList li:active {
       cursor: grabbing;
-      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
       transform: translateY(-2px);
     }
     .sortable-ghost {
-      background-color: #d1d5db !important;
-      opacity: 0.7;
+      opacity: 0.4;
+      background-color: #3b82f6 !important;
     }
-    
-    .leaflet-control-layers-expanded {
-        max-height: 300px;
-        overflow-y: auto;
+
+    /* Active cursor mode when identifying */
+    body.identify-active #map {
+      cursor: crosshair !important;
+    }
+    .leaflet-container.identify-cursor {
+      cursor: crosshair !important;
     }
   </style>
 </head>
-<body class="bg-gray-100">
-  <header class="bg-blue-800 text-white flex items-center justify-between p-4 shadow-md h-16">
-    <div class="flex items-center">
-      <img src="logo_ngeo.png" alt="Logo NGEO IDEFLOR-Bio" class="h-12 w-auto mr-4" />
-      <span class="text-xl font-bold">Visualizador Geoespacial - IDEFLOR-Bio</span>
+<body class="dark bg-slate-900 text-slate-100 font-sans antialiased">
+
+  <!-- ==================== HEADER ==================== -->
+  <header class="h-16 bg-slate-900/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-800 px-4 flex items-center justify-between z-40 relative shadow-md">
+    <div class="flex items-center space-x-3">
+      <button id="toggleSidebarBtn" class="lg:hidden p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition">
+        <i data-lucide="panel-left" class="w-5 h-5"></i>
+      </button>
+      <div class="flex items-center space-x-3">
+        <img src="logo_ngeo.png" alt="Logo NGEO IDEFLOR-Bio" class="h-10 w-auto" />
+        <div>
+          <h1 class="font-heading font-bold text-sm sm:text-base text-white leading-tight flex items-center gap-2">
+            Visualizador Geoespacial
+            <span class="text-[10px] font-mono uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full hidden sm:inline-block">IDEFLOR-Bio</span>
+          </h1>
+          <p class="text-[11px] text-slate-400 hidden md:block">Governo do Estado do Pará • Dados e Camadas Geoespaciais</p>
+        </div>
+      </div>
     </div>
-    <button id="aboutAppBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">
-      Sobre o App
-    </button>
+
+    <!-- Header Right Actions -->
+    <div class="flex items-center space-x-2">
+      <!-- Theme Switcher -->
+      <button id="themeToggleBtn" title="Alternar Tema Escuro / Claro" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+        <i data-lucide="sun" class="w-4 h-4 text-amber-400 hidden dark:block"></i>
+        <i data-lucide="moon" class="w-4 h-4 text-slate-700 block dark:hidden"></i>
+      </button>
+
+      <!-- About App Button -->
+      <button id="aboutAppBtn" class="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 px-3.5 rounded-xl text-xs shadow-lg shadow-emerald-950/40 transition">
+        <i data-lucide="info" class="w-4 h-4"></i>
+        <span class="hidden sm:inline">Sobre o App</span>
+      </button>
+    </div>
   </header>
 
-  <div id="searchControl" class="bg-white p-4 rounded-lg shadow-lg w-80 space-y-3 text-sm">
-    <label for="layerSelect" class="block text-gray-700 font-semibold">Camada</label>
-    <select id="layerSelect" class="w-full text-sm p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></select>
+  <!-- ==================== MAIN WORKSPACE ==================== -->
+  <div class="flex h-[calc(100vh-4rem)] relative">
     
-    <label for="columnSelect" class="block text-gray-700 font-semibold">Coluna</label>
-    <select id="columnSelect" disabled class="w-full text-sm p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></select>
-
-    <label for="valueSelect" class="block text-gray-700 font-semibold">Valor</label>
-    <select id="valueSelect" disabled class="w-full text-sm p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></select>
-
-    <div class="flex gap-2 pt-1">
-      <button id="applyFilterBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1.5 px-3 rounded-lg shadow-md transition text-sm">Aplicar</button>
-      <button id="clearFiltersBtn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-1.5 px-3 rounded-lg shadow-md transition text-sm">Limpar</button>
-    </div>
-
-    <div class="text-xs text-gray-600 flex items-center gap-2">
-      <span id="countBadge" class="px-2 py-1 rounded bg-gray-100 border border-gray-300"></span>
-      <a id="downloadBtn" class="text-blue-700 underline" href="#" download="dados_filtrados.geojson">Baixar filtro</a>
-    </div>
-
-    <hr class="my-2 border-gray-300" />
-    <h3 class="block text-gray-700 font-semibold">Reordenar Camadas</h3>
-    <ul id="layerOrderList" class="space-y-1">
-      </ul>
-  </div>
-  
-  <div id="mapActionControls" class="absolute top-5rem left-21.5rem z-5000 flex flex-col gap-2">
-      <div id="identifyControl" class="relative">
-            <button id="identifyBtn" class="bg-white p-2 rounded-lg shadow-md hover:bg-gray-200 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75" title="Identificar Feição">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-            </button>
-            <div id="identifyMenu" class="absolute bg-white p-2 rounded-lg shadow-lg w-48 space-y-1 text-xs">
-                  <h4 class="font-semibold text-gray-700">Identificar Camadas:</h4>
-                  <div id="identifyCheckboxes"></div>
-                  <button id="exitIdentifyBtn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded-lg shadow-md transition duration-300 ease-in-out text-xs">Sair</button>
-            </div>
-      </div>
-
-        <button id="toggleOutlineBtn" class="bg-white p-2 rounded-lg shadow-md hover:bg-gray-200 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75" title="Alternar Modo Contorno">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-            </svg>
-      </button>
-   </div>
-
-  <div id="map" class="relative"></div>
-
-  <div id="aboutAppModal" class="modal-overlay">
-    <div class="modal-content">
-      <h2 class="text-2xl font-bold text-gray-800 mb-4">Sobre o Aplicativo</h2>
-      <p class="text-gray-700 mb-4">
-        Este aplicativo foi desenvolvido com o intuito de visualizar áreas protegidas de diversas bases de dados públicas em um único portal. O objetivo é auxiliar e otimizar a visualização desses dados durante reuniões.
-      </p>
-      <div class="flex flex-col sm:flex-row gap-4 mt-6">
-        <a href="documentacao.html" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out text-center">
-          Ver documentação completa
-        </a>
-        <button id="closeModalBtn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">
-          Fechar
+    <!-- LEFT SIDEBAR: LAYER MANAGEMENT & ADVANCED FILTERS -->
+    <aside id="sidebar" class="w-80 lg:w-96 glass-panel h-full z-30 flex flex-col border-r border-slate-800 transition-all duration-300 absolute lg:relative -translate-x-full lg:translate-x-0 shadow-2xl">
+      
+      <!-- Tabs Header -->
+      <div class="flex border-b border-slate-800 bg-slate-950/40 text-xs font-semibold font-heading">
+        <button id="tabLayersBtn" class="flex-1 py-3 px-4 flex items-center justify-center gap-2 border-b-2 border-emerald-500 text-emerald-400 font-bold bg-slate-900/50">
+          <i data-lucide="layers" class="w-4 h-4"></i>
+          <span>Camadas</span>
+        </button>
+        <button id="tabFilterBtn" class="flex-1 py-3 px-4 flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200 border-b-2 border-transparent">
+          <i data-lucide="filter" class="w-4 h-4"></i>
+          <span>Filtrar Dados</span>
         </button>
       </div>
+
+      <!-- TAB 1: CAMADAS & ORDEM (REORDENAÇÃO DRAG & DROP + OPACIDADE) -->
+      <div id="tabLayersContent" class="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+        <div class="flex items-center justify-between text-slate-400 font-mono text-[11px]">
+          <span>ARRASTE PARA REORDENAR</span>
+          <i data-lucide="grip-vertical" class="w-4 h-4"></i>
+        </div>
+
+        <!-- Lista Reordenável de Camadas -->
+        <ul id="layerOrderList" class="space-y-2"></ul>
+      </div>
+
+      <!-- TAB 2: FILTRO POR ATRIBUTOS -->
+      <div id="tabFilterContent" class="flex-1 overflow-y-auto p-4 space-y-3.5 text-xs hidden">
+        <div>
+          <label for="layerSelect" class="block text-slate-300 font-semibold mb-1">Selecionar Camada</label>
+          <select id="layerSelect" class="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded-xl p-2.5 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"></select>
+        </div>
+
+        <div>
+          <label for="columnSelect" class="block text-slate-300 font-semibold mb-1">Selecionar Coluna</label>
+          <select id="columnSelect" disabled class="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded-xl p-2.5 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 disabled:opacity-50"></select>
+        </div>
+
+        <div>
+          <label for="valueSelect" class="block text-slate-300 font-semibold mb-1">Selecionar Valor</label>
+          <select id="valueSelect" disabled class="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded-xl p-2.5 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 disabled:opacity-50"></select>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button id="applyFilterBtn" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-3 rounded-xl shadow-lg transition flex items-center justify-center gap-1.5">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            <span>Aplicar</span>
+          </button>
+          <button id="clearFiltersBtn" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2 px-3 rounded-xl border border-slate-700 transition flex items-center justify-center gap-1.5">
+            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+            <span>Limpar</span>
+          </button>
+        </div>
+
+        <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex items-center justify-between text-xs pt-3">
+          <span id="countBadge" class="font-mono text-emerald-400 font-bold">0 selecionados</span>
+          <a id="downloadBtn" class="text-xs text-blue-400 underline font-semibold flex items-center gap-1" href="#" download="dados_filtrados.geojson">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>Baixar GeoJSON</span>
+          </a>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- RIGHT MAP CANVAS & FLOATING TOOL DOCK -->
+    <div class="flex-1 relative h-full">
+      
+      <!-- FLOATING MAP ACTION TOOLBAR (TOP RIGHT DOCK) -->
+      <div id="mapActionControls" class="absolute top-4 right-4 z-20 flex flex-col gap-2">
+        <!-- Identify Feature Tool -->
+        <button id="identifyBtn" class="bg-slate-900/90 hover:bg-slate-800 text-slate-200 p-2.5 rounded-xl border border-slate-700 shadow-xl transition flex items-center gap-2 group" title="Identificar Feições no Mapa">
+          <i data-lucide="mouse-pointer-click" class="w-5 h-5 text-emerald-400 group-hover:scale-110 transition"></i>
+          <span class="text-xs font-semibold pr-1 hidden sm:inline">Identificar</span>
+        </button>
+
+        <!-- Toggle Outline Mode Tool -->
+        <button id="toggleOutlineBtn" class="bg-slate-900/90 hover:bg-slate-800 text-slate-200 p-2.5 rounded-xl border border-slate-700 shadow-xl transition flex items-center gap-2 group" title="Alternar Modo Contorno">
+          <i data-lucide="square" class="w-5 h-5 text-amber-400 group-hover:scale-110 transition"></i>
+          <span class="text-xs font-semibold pr-1 hidden sm:inline">Contornos</span>
+        </button>
+
+        <!-- Reset Map Extent Tool -->
+        <button id="resetViewBtn" class="bg-slate-900/90 hover:bg-slate-800 text-slate-200 p-2.5 rounded-xl border border-slate-700 shadow-xl transition flex items-center gap-2 group" title="Resetar Visão para o Pará">
+          <i data-lucide="maximize" class="w-5 h-5 text-cyan-400 group-hover:scale-110 transition"></i>
+          <span class="text-xs font-semibold pr-1 hidden sm:inline">Visão Geral</span>
+        </button>
+      </div>
+
+      <!-- MAP CONTAINER -->
+      <div id="map"></div>
+
+      <!-- INSPECTOR SIDE-SHEET (DETALHES DA FEIÇÃO IDENTIFICADA) -->
+      <aside id="inspectorSideSheet" class="absolute top-4 right-4 sm:right-16 bottom-4 w-full sm:w-96 glass-panel rounded-2xl z-30 p-4 flex flex-col shadow-2xl border border-slate-700/80 transform translate-x-full transition-transform duration-300 hidden">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="info" class="w-5 h-5 text-emerald-400"></i>
+            <h3 class="font-heading font-bold text-sm text-white">Inspeção de Feição</h3>
+          </div>
+          <button id="closeInspectorBtn" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <div id="inspectorContent" class="flex-1 overflow-y-auto pt-3 space-y-4 text-xs">
+          <!-- Dynamic Feature Properties Table -->
+        </div>
+      </aside>
     </div>
   </div>
 
+  <!-- ABOUT MODAL -->
+  <div id="aboutAppModal" class="modal-overlay">
+    <div class="modal-content glass-panel p-6 rounded-2xl max-w-lg w-full shadow-2xl border border-slate-700 text-slate-200">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+        <h2 class="text-lg font-heading font-bold text-white flex items-center gap-2">
+          <i data-lucide="trees" class="w-5 h-5 text-emerald-400"></i>
+          Sobre o Visualizador Geoespacial
+        </h2>
+        <button id="closeModalBtn" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed mb-4">
+        Desenvolvido para o <strong>IDEFLOR-Bio (Instituto de Desenvolvimento Florestal e da Biodiversidade do Estado do Pará)</strong>, este portal centraliza a consulta de dados de Áreas Protegidas, Terras Indígenas, Territórios Quilombolas e Limites Territoriais do Pará.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-3 pt-2">
+        <a href="documentacao.html" target="_blank" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-xl shadow-md transition text-center text-xs flex items-center justify-center gap-2">
+          <i data-lucide="book-open" class="w-4 h-4"></i>
+          <span>Documentação Completa</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Logic -->
   <script>
     /* ---------- Estado Global ---------- */
     let map;
     let originalLayers = {};
+    let layerOpacities = {};
     let activeLayerName;
     let legendControl;
     let currentFilteredFC = null;
     let identifyActive = false;
-    let filteredLayerGroup = L.layerGroup();
-    let isFilterActive = false;
-    let originalMapBounds;
     let isOutlineModeActive = false;
+    let originalMapBounds;
 
-    /* ---------- UI refs ---------- */
+    /* ---------- UI References ---------- */
     const layerSel = document.getElementById('layerSelect');
     const colSel = document.getElementById('columnSelect');
     const valSel = document.getElementById('valueSelect');
@@ -212,213 +310,204 @@
     const layerOrderList = document.getElementById('layerOrderList');
 
     const identifyBtn = document.getElementById('identifyBtn');
-    const identifyMenu = document.getElementById('identifyMenu');
-    const identifyCheckboxes = document.getElementById('identifyCheckboxes');
-    const exitIdentifyBtn = document.getElementById('exitIdentifyBtn');
     const toggleOutlineBtn = document.getElementById('toggleOutlineBtn');
+    const resetViewBtn = document.getElementById('resetViewBtn');
+    const inspectorSideSheet = document.getElementById('inspectorSideSheet');
+    const inspectorContent = document.getElementById('inspectorContent');
+    const closeInspectorBtn = document.getElementById('closeInspectorBtn');
 
-
-    /* ---------- Utils do filtro ---------- */
+    /* ---------- Utils ---------- */
     const norm = v => (v === null || v === undefined) ? '' : String(v).trim();
     const uniq = arr => Array.from(new Set(arr));
 
-    /* ---------- Estilos/cores ---------- */
-    const getMassaDaguaStyle = () => ({ fillColor: '#78d4e9', color: '#78d4e9', weight: 1, opacity: 1, fillOpacity: 1 });
-    const getMunicipiosStyle = () => ({ fillColor:'transparent', weight: 2, opacity: 1, color:'black', dashArray:'5, 5', fillOpacity:0 });
-    const getQuilombosEstaduaisStyle = () => ({ fillColor: '#74381e', color: 'black', weight: 1, opacity: 1, fillOpacity: 1 });
-    const getQuilombosFederaisStyle = () => ({ fillColor: '#c37d64', color: 'black', weight: 1, opacity: 1, fillOpacity: 1 });
-    const getTerrasIndigenasStyle = () => ({ fillColor: '#f4cd94', color: 'black', weight: 1, opacity: 1, fillOpacity: 1 });
-    const getUcsEstaduaisStyle = () => ({ fillColor: '#a1b38b', color: 'black', weight: 1, opacity: 1, fillOpacity: 1 });
-    const getUcsFederaisStyle = () => ({ fillColor: '#d0e6b3', color: 'black', weight: 1, opacity: 1, fillOpacity: 1 });
-    const getRegioesIntegracaoStyle = () => ({ fillColor:'transparent', weight:3, opacity:1, color:'brown', fillOpacity:0 });
+    /* ---------- Estilos / Cores Institucionais ---------- */
+    const getMassaDaguaStyle = () => ({ fillColor: '#78d4e9', color: '#78d4e9', weight: 1, opacity: 1, fillOpacity: layerOpacities['Massa d\'Água'] ?? 0.8 });
+    const getMunicipiosStyle = () => ({ fillColor:'transparent', weight: 1.5, opacity: 0.8, color:'#94a3b8', dashArray:'4, 4', fillOpacity: 0 });
+    const getQuilombosEstaduaisStyle = () => ({ fillColor: '#74381e', color: '#000000', weight: 1, opacity: 1, fillOpacity: layerOpacities['Quilombos Estaduais'] ?? 0.7 });
+    const getQuilombosFederaisStyle = () => ({ fillColor: '#c37d64', color: '#000000', weight: 1, opacity: 1, fillOpacity: layerOpacities['Quilombos Federais'] ?? 0.7 });
+    const getTerrasIndigenasStyle = () => ({ fillColor: '#f4cd94', color: '#78350f', weight: 1, opacity: 1, fillOpacity: layerOpacities['Terras Indígenas'] ?? 0.75 });
+    const getUcsEstaduaisStyle = () => ({ fillColor: '#15803d', color: '#064e3b', weight: 1.2, opacity: 1, fillOpacity: layerOpacities['UCs Estaduais'] ?? 0.75 });
+    const getUcsFederaisStyle = () => ({ fillColor: '#65a30d', color: '#3f6212', weight: 1.2, opacity: 1, fillOpacity: layerOpacities['UCs Federais'] ?? 0.75 });
+    const getRegioesIntegracaoStyle = () => ({ fillColor:'transparent', weight: 2.5, opacity:0.9, color:'#b45309', fillOpacity: 0 });
 
-    const getMassaDaguaVectorStyle = (feature) => {
-        return {
-            weight: 0.5,
-            color: '#78d4e9',
-            opacity: 1,
-            fillColor: '#78d4e9',
-            fillOpacity: 0.8
-        };
+    const getMassaDaguaVectorStyle = () => ({ weight: 0.5, color: '#78d4e9', opacity: 1, fillColor: '#78d4e9', fillOpacity: layerOpacities['Massa d\'Água'] ?? 0.8 });
+
+    /* ---------- Identify Inspector Side-Sheet ---------- */
+    function showPopupForLayers(e) {
+      if (!identifyActive) return;
+
+      let foundFeatures = [];
+      const layersToCheck = Object.keys(originalLayers);
+
+      layersToCheck.forEach(layerName => {
+        if (layerName === 'Massa d\'Água') return;
+        const layerData = originalLayers[layerName];
+        if (layerData && map.hasLayer(layerData.leafletLayer)) {
+          const layerGroup = layerData.leafletLayer;
+          if (layerGroup.eachLayer) {
+            layerGroup.eachLayer(layer => {
+              if (layer.getBounds && layer.getBounds().contains(e.latlng)) {
+                foundFeatures.push({
+                  layerName: layerName,
+                  properties: layer.feature.properties
+                });
+              }
+            });
+          }
+        }
+      });
+
+      if (foundFeatures.length > 0) {
+        openInspector(foundFeatures);
+      }
+    }
+
+    function openInspector(features) {
+      inspectorSideSheet.classList.remove('hidden', 'translate-x-full');
+      inspectorContent.innerHTML = '';
+
+      features.forEach((item, idx) => {
+        const card = document.createElement('div');
+        card.className = 'bg-slate-900/90 border border-slate-800 p-3 rounded-xl space-y-2';
+
+        let propsHtml = Object.entries(item.properties)
+          .map(([k, v]) => `<div class="flex justify-between border-b border-slate-800/60 py-1"><span class="text-slate-400 font-mono text-[10px]">${k}:</span><span class="font-semibold text-slate-200 text-[11px] text-right ml-2">${v}</span></div>`)
+          .join('');
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+            <span class="font-heading font-bold text-emerald-400 text-xs">${item.layerName}</span>
+            <span class="text-[10px] text-slate-500 font-mono">Feição #${idx + 1}</span>
+          </div>
+          <div class="space-y-0.5 max-h-48 overflow-y-auto pr-1">
+            ${propsHtml}
+          </div>
+        `;
+        inspectorContent.appendChild(card);
+      });
+
+      lucide.createIcons();
+    }
+
+    closeInspectorBtn.onclick = () => {
+      inspectorSideSheet.classList.add('translate-x-full');
+      setTimeout(() => inspectorSideSheet.classList.add('hidden'), 300);
     };
 
-    /* ---------- Popups ---------- */
-    function onEachFeature(feature, layer) {
-        layer.on('click', function(e) {
-            if (!identifyActive) return;
-            const checkbox = document.getElementById(`identify-${activeLayerName}`);
-            if (checkbox && checkbox.checked) {
-                let popupContent = `<h4>${activeLayerName}</h4><div class="p-2 text-sm">${Object.entries(feature.properties).map(([k, v]) => `<strong>${k}:</strong> ${v}<br>`).join('')}</div>`;
-                L.popup()
-                    .setLatLng(e.latlng)
-                    .setContent(popupContent)
-                    .openOn(map);
-            }
-        });
-    }
-
-    function showPopupForLayers(e) {
-        if (!identifyActive) return;
-
-        let popupContent = "<h3>Informações do Ponto</h3>";
-        let foundFeatures = false;
-        
-        const layersToCheck = Object.keys(originalLayers);
-
-        layersToCheck.forEach(layerName => {
-            const checkbox = document.getElementById(`identify-${layerName}`);
-            if (checkbox && checkbox.checked && map.hasLayer(originalLayers[layerName].leafletLayer)) {
-                const layerGroup = originalLayers[layerName].leafletLayer;
-                if (layerGroup.eachLayer) {
-                    layerGroup.eachLayer(layer => {
-                        // Verifica se o ponto clicado está dentro do polígono
-                        if (layer.getBounds().contains(e.latlng)) {
-                            popupContent += `<hr><h4>${layerName}</h4><div class="p-2 text-sm">${Object.entries(layer.feature.properties).map(([k, v]) => `<strong>${k}:</strong> ${v}<br>`).join('')}</div>`;
-                            foundFeatures = true;
-                        }
-                    });
-                }
-            }
-        });
-
-        if (foundFeatures) {
-            L.popup()
-                .setLatLng(e.latlng)
-                .setContent(popupContent)
-                .openOn(map);
-        }
-    }
-
-    /* ---------- Legenda ---------- */
-    function createLegend(){
-      legendControl = L.control({position:'bottomright'});
+    /* ---------- Legenda Dinâmica ---------- */
+    function createLegend() {
+      legendControl = L.control({ position: 'bottomright' });
       legendControl.onAdd = () => {
-        const div = L.DomUtil.create('div','legend');
-        div.innerHTML = '<strong>Legenda</strong><br>';
+        const div = L.DomUtil.create('div', 'legend');
+        div.innerHTML = '<strong>Legenda</strong>';
         return div;
       };
       legendControl.addTo(map);
       updateLegend();
     }
-// SUBSTITUIR ESTA FUNÇÃO
-    function updateLegend(){
-      const el = document.querySelector('.legend'); if(!el) return;
-      let html = '<strong>Legenda</strong><br>';
+
+    function updateLegend() {
+      const el = document.querySelector('.legend'); if (!el) return;
+      let html = '<strong class="font-heading block mb-1">Legenda</strong>';
       
       const layers = [
-          { name: 'Massa d\'Água', layerRef: originalLayers['Massa d\'Água']?.leafletLayer, color: '#78d4e9', type: 'polygon' },
-          { name: 'Municípios', layerRef: originalLayers['Municípios']?.leafletLayer, color: 'black', type: 'dashed_line' },
-          { name: 'Regiões de Integração', layerRef: originalLayers['Regiões de Integração']?.leafletLayer, color: 'brown', type: 'line' },
-          { name: 'UCs Estaduais', layerRef: originalLayers['UCs Estaduais']?.leafletLayer, color: '#a1b38b', type: 'polygon' },
-          { name: 'Terras Indígenas', layerRef: originalLayers['Terras Indígenas']?.leafletLayer, color: '#f4cd94', type: 'polygon' },
-          { name: 'UCs Federais', layerRef: originalLayers['UCs Federais']?.leafletLayer, color: '#d0e6b3', type: 'polygon' },
-          { name: 'Quilombos Estaduais', layerRef: originalLayers['Quilombos Estaduais']?.leafletLayer, color: '#74381e', type: 'polygon' },
-          { name: 'Quilombos Federais', layerRef: originalLayers['Quilombos Federais']?.leafletLayer, color: '#c37d64', type: 'polygon' },
+        { name: 'Massa d\'Água', layerRef: originalLayers['Massa d\'Água']?.leafletLayer, color: '#78d4e9', type: 'polygon' },
+        { name: 'Municípios', layerRef: originalLayers['Municípios']?.leafletLayer, color: '#94a3b8', type: 'dashed_line' },
+        { name: 'Regiões de Integração', layerRef: originalLayers['Regiões de Integração']?.leafletLayer, color: '#b45309', type: 'line' },
+        { name: 'UCs Estaduais', layerRef: originalLayers['UCs Estaduais']?.leafletLayer, color: '#15803d', type: 'polygon' },
+        { name: 'Terras Indígenas', layerRef: originalLayers['Terras Indígenas']?.leafletLayer, color: '#f4cd94', type: 'polygon' },
+        { name: 'UCs Federais', layerRef: originalLayers['UCs Federais']?.leafletLayer, color: '#65a30d', type: 'polygon' },
+        { name: 'Quilombos Estaduais', layerRef: originalLayers['Quilombos Estaduais']?.leafletLayer, color: '#74381e', type: 'polygon' },
+        { name: 'Quilombos Federais', layerRef: originalLayers['Quilombos Federais']?.leafletLayer, color: '#c37d64', type: 'polygon' },
       ];
 
       layers.forEach(l => {
         if (l.layerRef && map.hasLayer(l.layerRef)) {
           if (l.type === 'polygon') {
-            if(isOutlineModeActive){
-              html += `<i style="background:transparent; border: 2px solid ${l.color};"></i> ${l.name}<br>`;
+            if (isOutlineModeActive) {
+              html += `<div class="flex items-center gap-1.5 mb-1"><i style="background:transparent; border: 2px solid ${l.color}; font-style:normal;"></i> <span>${l.name}</span></div>`;
             } else {
-              html += `<i style="background:${l.color}"></i> ${l.name}<br>`; 
+              html += `<div class="flex items-center gap-1.5 mb-1"><i style="background:${l.color}; font-style:normal;"></i> <span>${l.name}</span></div>`; 
             }
           }
-          else if (l.type === 'line') { html += `<div class="line" style="border:3px solid ${l.color}; background:transparent"></div> ${l.name}<br>`; }
-          else if (l.type === 'dashed_line') { html += `<div class="line" style="border:2px dashed ${l.color}; background:transparent"></div> ${l.name}<br>`; }
+          else if (l.type === 'line') { html += `<div class="flex items-center gap-1.5 mb-1"><div class="line" style="border:2.5px solid ${l.color}; background:transparent"></div> <span>${l.name}</span></div>`; }
+          else if (l.type === 'dashed_line') { html += `<div class="flex items-center gap-1.5 mb-1"><div class="line" style="border:1.5px dashed ${l.color}; background:transparent"></div> <span>${l.name}</span></div>`; }
         }
       });
       el.innerHTML = html;
     }
 
-    /* ---------- Funções de Filtro e Mapas ---------- */
-    function updateCount(n){ countEl.textContent = `${n} selecionado${n===1?'':'s'}`; }
+    /* ---------- Filtros & Download ---------- */
+    function updateCount(n) { countEl.textContent = `${n} selecionado${n === 1 ? '' : 's'}`; }
 
-    function fitToLayer(layer){
-      const b = layer.getBounds?.();
-      if (b && b.isValid && b.isValid()) map.flyToBounds(b, { padding: [30,30], duration: 0.6, maxZoom: 13 });
-    }
-
-    function buildDownload(fc){
-      try{
+    function buildDownload(fc) {
+      try {
         const blob = new Blob([JSON.stringify(fc, null, 2)], { type: 'application/geo+json' });
-        const url  = URL.createObjectURL(blob);
+        const url = URL.createObjectURL(blob);
         dlBtn.href = url; dlBtn.download = 'dados_filtrados.geojson';
-      }catch(e){}
-    }
-    
-    function populateLayerSelect(layers){
-        layerSel.innerHTML = '';
-        const ph = document.createElement('option'); ph.value=''; ph.textContent='— escolha a camada —'; layerSel.appendChild(ph);
-        Object.keys(layers).forEach(k => {
-            const opt = document.createElement('option');
-            opt.value = k;
-            opt.textContent = k;
-            layerSel.appendChild(opt);
-        });
-        colSel.disabled = true;
-        valSel.disabled = true;
+        dlBtn.style.display = 'inline-flex';
+      } catch(e) {}
     }
 
-    function populateColumns(layerName){
+    function populateLayerSelect(layers) {
+      layerSel.innerHTML = '';
+      const ph = document.createElement('option'); ph.value = ''; ph.textContent = '— escolha a camada —'; layerSel.appendChild(ph);
+      Object.keys(layers).forEach(k => {
+        const opt = document.createElement('option');
+        opt.value = k;
+        opt.textContent = k;
+        layerSel.appendChild(opt);
+      });
+      colSel.disabled = true;
+      valSel.disabled = true;
+    }
+
+    function populateColumns(layerName) {
       const features = originalLayers[layerName]?.features || [];
       const first = features.find(f => f && f.properties) || null;
       const keys = first ? Object.keys(first.properties) : [];
       colSel.innerHTML = '';
       if (!keys.length) {
-        const opt = document.createElement('option'); opt.value=''; opt.textContent='(sem colunas)';
+        const opt = document.createElement('option'); opt.value = ''; opt.textContent = '(sem colunas)';
         colSel.appendChild(opt); colSel.disabled = true; return;
       }
-      const ph = document.createElement('option'); ph.value=''; ph.textContent='— escolha a coluna —'; colSel.appendChild(ph);
+      const ph = document.createElement('option'); ph.value = ''; ph.textContent = '— escolha a coluna —'; colSel.appendChild(ph);
       keys.forEach(k => { 
-        const o=document.createElement('option'); 
-        o.value=k; 
-        
-        if(k === 'Municipios_lista') {
-            o.textContent = 'Municípios Sobrepostos';
-        } else if (k === 'RegioesIntegracao_lista') {
-            o.textContent = 'Reg. Integr. Sobrepostas';
-        } else {
-            o.textContent = k;
-        }
-
+        const o = document.createElement('option'); 
+        o.value = k; 
+        if (k === 'Municipios_lista') o.textContent = 'Municípios Sobrepostos';
+        else if (k === 'RegioesIntegracao_lista') o.textContent = 'Reg. Integr. Sobrepostas';
+        else o.textContent = k;
         colSel.appendChild(o); 
       });
       colSel.disabled = false;
-      valSel.innerHTML=''; valSel.disabled = true;
+      valSel.innerHTML = ''; valSel.disabled = true;
     }
 
-    function populateValues(layerName, column){
+    function populateValues(layerName, column) {
       const features = originalLayers[layerName]?.features || [];
-      
       let values = [];
       if (column.endsWith('_lista')) {
-          features.forEach(f => {
-              const valList = f?.properties?.[column]?.split(',').map(v => norm(v));
-              if (valList) values = values.concat(valList);
-          });
+        features.forEach(f => {
+          const valList = f?.properties?.[column]?.split(',').map(v => norm(v));
+          if (valList) values = values.concat(valList);
+        });
       } else {
-          values = features.map(f => f?.properties?.[column]).map(norm);
+        values = features.map(f => f?.properties?.[column]).map(norm);
       }
 
-      const uniqVals = uniq(values).sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true,sensitivity:'base'}));
-      
+      const uniqVals = uniq(values).sort((a,b) => a.localeCompare(b, 'pt-BR', { numeric: true, sensitivity: 'base' }));
       valSel.innerHTML = '';
-      const ph = document.createElement('option'); ph.value=''; ph.textContent='— escolha o valor —'; valSel.appendChild(ph);
-      const all = document.createElement('option'); all.value='__ALL__'; all.textContent='(Todos)'; valSel.appendChild(all);
-      uniqVals.forEach(v => { const o=document.createElement('option'); o.value=v; o.textContent=(v===''?'(vazio)':v); valSel.appendChild(o); });
+      const ph = document.createElement('option'); ph.value = ''; ph.textContent = '— escolha o valor —'; valSel.appendChild(ph);
+      const all = document.createElement('option'); all.value = '__ALL__'; all.textContent = '(Todos)'; valSel.appendChild(all);
+      uniqVals.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = (v === '' ? '(vazio)' : v); valSel.appendChild(o); });
       valSel.disabled = false;
       valSel.value = '__ALL__';
     }
 
-    // define a função filtro
     function filterFC(layerName, column, value) {
       const features = originalLayers[layerName]?.features || [];
-      if (!column || !value || value === '__ALL__') {
-        return { type: 'FeatureCollection', features: features };
-      }
-
+      if (!column || !value || value === '__ALL__') return { type: 'FeatureCollection', features: features };
       if (column.endsWith('_lista')) {
         return {
           type: 'FeatureCollection',
@@ -428,486 +517,303 @@
           })
         };
       }
-
       return {
         type: 'FeatureCollection',
         features: features.filter(f => norm(f?.properties?.[column]) === norm(value))
       };
     }
 
-// SUBSTITUIR ESTA FUNÇÃO
     function refreshMap(fc, layerName) {
-        // 1. Limpa camadas GeoJSON existentes do mapa
-        map.eachLayer(l => {
-            if (l instanceof L.GeoJSON) {
-                map.removeLayer(l);
-            }
-        });
+      map.eachLayer(l => {
+        if (l instanceof L.GeoJSON) map.removeLayer(l);
+      });
 
-        // Cria um grupo para conter todos os resultados do filtro
-        const filteredResultsGroup = L.featureGroup();
+      const filteredResultsGroup = L.featureGroup();
+      currentFilteredFC = { type: 'FeatureCollection', features: [] };
 
-        // Reinicializa o FeatureCollection para o download
-        currentFilteredFC = { type: 'FeatureCollection', features: [] };
+      const styleFunc = originalLayers[layerName]?.styleFunc;
+      if (!styleFunc) return;
 
-        // Adiciona a camada principal (ex: o município) ao grupo
-        const styleFunc = originalLayers[layerName]?.styleFunc;
-        if (!styleFunc) return;
+      let primaryStyle = styleFunc();
+      if (isOutlineModeActive && primaryStyle.fillColor && primaryStyle.fillColor !== 'transparent') {
+        primaryStyle = { ...primaryStyle, color: primaryStyle.fillColor, fillOpacity: 0, weight: 3 };
+      }
+      const primaryFilteredLayer = L.geoJSON(fc, { pane: originalLayers[layerName].pane, style: primaryStyle });
+      filteredResultsGroup.addLayer(primaryFilteredLayer);
+      currentFilteredFC.features.push(...fc.features);
 
-        let primaryStyle = styleFunc();
-        if (isOutlineModeActive) {
-            if(primaryStyle.fillColor && primaryStyle.fillColor !== 'transparent') {
-                primaryStyle = { ...primaryStyle, color: primaryStyle.fillColor, fillOpacity: 0, weight: 3 };
-            }
-        }
-        const layerOptions = { pane: originalLayers[layerName].pane, style: primaryStyle, onEachFeature: onEachFeature };
-        
-        const primaryFilteredLayer = L.geoJSON(fc, layerOptions);
-        filteredResultsGroup.addLayer(primaryFilteredLayer);
-        currentFilteredFC.features.push(...fc.features);
+      filteredResultsGroup.addTo(map);
+      if (filteredResultsGroup.getLayers().length > 0) {
+        map.flyToBounds(filteredResultsGroup.getBounds(), { padding: [30,30], duration: 0.6, maxZoom: 13 });
+      }
 
-        // Caso de filtro por sobreposição (multi-camadas)
-        if (layerName === 'Municípios' || layerName === 'Regiões de Integração') {
-            const otherLayers = Object.keys(originalLayers).filter(name => name !== 'Municípios' && name !== 'Regiões de Integração' && name !== 'Massa d\'Água');
-            
-            otherLayers.forEach(otherLayerName => {
-                const otherLayerData = originalLayers[otherLayerName];
-                const column = layerName === 'Municípios' ? 'Municipios_lista' : 'RegioesIntegracao_lista';
-                const filteredFeatures = otherLayerData.features.filter(f => {
-                    const valList = f?.properties?.[column]?.split(',').map(v => norm(v));
-                    return valList && valList.includes(norm(valSel.value));
-                });
-                
-                if (filteredFeatures.length > 0) {
-                    let otherStyle = otherLayerData.styleFunc();
-                    if(isOutlineModeActive) {
-                        if(otherStyle.fillColor && otherStyle.fillColor !== 'transparent') {
-                           otherStyle = { ...otherStyle, color: otherStyle.fillColor, fillOpacity: 0, weight: 3 };
-                        }
-                    }
-                    const newLayer = L.geoJSON({ type: 'FeatureCollection', features: filteredFeatures }, {
-                        pane: otherLayerData.pane,
-                        style: otherStyle,
-                        onEachFeature: onEachFeature
-                    });
-                    filteredResultsGroup.addLayer(newLayer);
-                    currentFilteredFC.features.push(...filteredFeatures);
-                }
-            });
-            updateCount(currentFilteredFC.features.length);
-        } else { // Caso de filtro por atributo (single-camada)
-            updateCount(fc.features.length);
-        }
-
-        // Adiciona o grupo com TODAS as camadas filtradas ao mapa
-        filteredResultsGroup.addTo(map);
-
-        // Somente AGORA, ajusta o zoom para os limites do grupo
-        if (filteredResultsGroup.getLayers().length > 0) {
-            map.flyToBounds(filteredResultsGroup.getBounds(), { padding: [30,30], duration: 0.6, maxZoom: 13 });
-        }
-
-        buildDownload(currentFilteredFC);
-        updateLegend();
+      buildDownload(currentFilteredFC);
+      updateLegend();
     }
-    
-    // Funções para reordenar as camadas
+
+    /* ---------- Reordenação de Camadas & Opacidade ---------- */
     function populateLayerOrderList(layers) {
-        layerOrderList.innerHTML = '';
-        const sortableLayers = [
-            "Municípios", 
-            "Regiões de Integração",
-            "UCs Estaduais", 
-            "Terras Indígenas", 
-            "UCs Federais", 
-            "Quilombos Estaduais", 
-            "Quilombos Federais"
-        ];
-        sortableLayers.forEach(layerName => {
-            if (layers[layerName]) {
-                const li = document.createElement('li');
-                li.textContent = layerName;
-                li.dataset.layerName = layerName;
-                layerOrderList.appendChild(li);
-            }
+      layerOrderList.innerHTML = '';
+      const sortableLayers = [
+        "Municípios", 
+        "Regiões de Integração",
+        "UCs Estaduais", 
+        "Terras Indígenas", 
+        "UCs Federais", 
+        "Quilombos Estaduais", 
+        "Quilombos Federais"
+      ];
+
+      sortableLayers.forEach(layerName => {
+        if (layers[layerName]) {
+          const li = document.createElement('li');
+          li.className = 'bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl cursor-grab flex items-center justify-between gap-2 text-xs text-slate-200 hover:border-emerald-500/50';
+          li.dataset.layerName = layerName;
+          
+          li.innerHTML = `
+            <div class="flex items-center gap-2">
+              <i data-lucide="grip-vertical" class="w-4 h-4 text-slate-500"></i>
+              <span class="font-semibold">${layerName}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="range" min="0" max="1" step="0.1" value="0.75" title="Opacidade" class="w-16 accent-emerald-500 cursor-pointer opacity-slider" data-layer="${layerName}">
+            </div>
+          `;
+          layerOrderList.appendChild(li);
+        }
+      });
+
+      // Opacity sliders event listeners
+      document.querySelectorAll('.opacity-slider').forEach(slider => {
+        slider.addEventListener('input', (e) => {
+          const lName = e.target.dataset.layer;
+          const val = parseFloat(e.target.value);
+          layerOpacities[lName] = val;
+          if (originalLayers[lName]?.leafletLayer) {
+            originalLayers[lName].leafletLayer.setStyle({ fillOpacity: val });
+          }
         });
+      });
+
+      lucide.createIcons();
     }
 
     function refreshLayerOrderOnMap() {
-        const listItems = Array.from(layerOrderList.querySelectorAll('li'));
-        const orderedLayers = listItems.map(li => li.dataset.layerName);
+      const listItems = Array.from(layerOrderList.querySelectorAll('li'));
+      const orderedLayers = listItems.map(li => li.dataset.layerName);
+      const invertedOrder = orderedLayers.reverse();
 
-        // Inverte a lista para a lógica do Leaflet
-        const invertedOrder = orderedLayers.reverse();
+      const massaDaguaLayer = originalLayers['Massa d\'Água']?.leafletLayer;
+      if (massaDaguaLayer && map.hasLayer(massaDaguaLayer)) {
+        massaDaguaLayer.bringToBack();
+      }
 
-        // Camada de massa d'água sempre no fundo
-        const massaDaguaLayer = originalLayers['Massa d\'Água']?.leafletLayer;
-        if (massaDaguaLayer && map.hasLayer(massaDaguaLayer)) {
-            massaDaguaLayer.bringToBack();
+      invertedOrder.forEach(layerName => {
+        const layer = originalLayers[layerName]?.leafletLayer;
+        if (layer && map.hasLayer(layer)) {
+          layer.bringToFront();
         }
-
-        // Traz as camadas da lista para a frente, se estiverem no mapa
-        invertedOrder.forEach(layerName => {
-            const layer = originalLayers[layerName]?.leafletLayer;
-            if (layer && map.hasLayer(layer)) {
-                layer.bringToFront();
-            }
-        });
-        
-        // Camadas filtradas sempre ficam por cima de tudo
-        if (map.hasLayer(filteredLayerGroup)) {
-            filteredLayerGroup.bringToFront();
-        }
-
-        updateLegend();
+      });
+      updateLegend();
     }
-// ADICIONAR ESTA NOVA FUNÇÃO
+
     function toggleOutlineMode() {
-        isOutlineModeActive = !isOutlineModeActive; // Inverte o estado
-        toggleOutlineBtn.classList.toggle('active', isOutlineModeActive); // Atualiza a aparência do botão
+      isOutlineModeActive = !isOutlineModeActive;
+      toggleOutlineBtn.classList.toggle('bg-blue-600', isOutlineModeActive);
 
-        // Itera sobre todas as camadas para aplicar o novo estilo
-        Object.values(originalLayers).forEach(layerData => {
-            if (layerData.leafletLayer && typeof layerData.leafletLayer.setStyle === 'function' && layerData.styleFunc) {
-                const originalStyle = layerData.styleFunc();
-                let newStyle;
-
-                if (isOutlineModeActive) {
-                    // Se a camada tem cor de preenchimento, cria o estilo de contorno
-                    if (originalStyle.fillColor && originalStyle.fillColor !== 'transparent') {
-                        newStyle = {
-                            ...originalStyle,
-                            color: originalStyle.fillColor, // Usa a cor de preenchimento como cor do contorno
-                            fillOpacity: 0,
-                            weight: 3 // Contorno mais espesso
-                        };
-                    } else {
-                        newStyle = originalStyle; // Mantém o estilo para camadas que já são apenas linhas
-                    }
-                } else {
-                    // Retorna ao estilo original
-                    newStyle = originalStyle;
-                }
-                layerData.leafletLayer.setStyle(newStyle);
-            }
-        });
-
-        updateLegend(); // Atualiza a legenda para refletir a mudança
+      Object.values(originalLayers).forEach(layerData => {
+        if (layerData.leafletLayer && typeof layerData.leafletLayer.setStyle === 'function' && layerData.styleFunc) {
+          const originalStyle = layerData.styleFunc();
+          let newStyle;
+          if (isOutlineModeActive && originalStyle.fillColor && originalStyle.fillColor !== 'transparent') {
+            newStyle = { ...originalStyle, color: originalStyle.fillColor, fillOpacity: 0, weight: 3 };
+          } else {
+            newStyle = originalStyle;
+          }
+          layerData.leafletLayer.setStyle(newStyle);
+        }
+      });
+      updateLegend();
     }
 
-    /* ---------- Boot ---------- */
+    /* ---------- Boot Application ---------- */
     window.onload = async function () {
-        const googleRelief = L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', { maxZoom: 18, attribution: '&copy; Google' });
-        const googleSat = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { maxZoom: 20, attribution: '&copy; Google' });
-        const bingSat = L.tileLayer('https://ecn.t3.tiles.virtualearth.net/tiles/a{q}.jpeg?g=1', { attribution: '&copy; Bing Maps', maxZoom: 19, subdomains:['t0','t1','t2','t3'] });        const sentinel2 = L.tileLayer.wms('https://tiles.maps.eox.at/wms', { layers: 's2cloudless-2024_3857', format: 'image/jpeg', attribution: '© EOX IT Services' });
-        const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' });
-        const cartoDbVoy = L.tileLayer('https://a.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}.png', { maxZoom: 20, attribution: '&copy; CARTO' });
-        const esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-        });
-        const sentinel2023 = L.tileLayer.wms('https://tiles.maps.eox.at/wms', { layers: 's2cloudless-2023_3857', format: 'image/jpeg', attribution: '© EOX IT Services' });
-        const sentinel2022 = L.tileLayer.wms('https://tiles.maps.eox.at/wms', { layers: 's2cloudless-2022_3857', format: 'image/jpeg', attribution: '© EOX IT Services' });
-        const sentinel2021 = L.tileLayer.wms('https://tiles.maps.eox.at/wms', { layers: 's2cloudless-2021_3857', format: 'image/jpeg', attribution: '© EOX IT Services' });
-        const sentinel2020 = L.tileLayer.wms('https://tiles.maps.eox.at/wms', { layers: 's2cloudless-2020_3857', format: 'image/jpeg', attribution: '© EOX IT Services' });
-        const sentinel2019 = L.tileLayer.wms('https://tiles.maps.eox.at/wms', { layers: 's2cloudless-2019_3857', format: 'image/jpeg', attribution: '© EOX IT Services' });
-        const sentinel2018 = L.tileLayer.wms('https://tiles.maps.eox.at/wms', { layers: 's2cloudless-2018_3857', format: 'image/jpeg', attribution: '© EOX IT Services' });
-        const sentinel2017 = L.tileLayer.wms('https://tiles.maps.eox.at/wms', { layers: 's2cloudless-2017_3857', format: 'image/jpeg', attribution: '© EOX IT Services' });
-        const sentinel2016 = L.tileLayer.wms('https://tiles.maps.eox.at/wms', { layers: 's2cloudless_3857', format: 'image/jpeg', attribution: '© EOX IT Services' });
-        const baseLayers = {
-            "Google Relevo com Rótulos": googleRelief,
-            "Google Satellite": googleSat,
-            "ESRI World Imagery": esriSat,
-            "Bing Satellite": bingSat,
-            "Sentinel-2 2024 (sem nuvens)": sentinel2,
-            "Sentinel-2 2023 (sem nuvens)": sentinel2023,
-            "Sentinel-2 2022 (sem nuvens)": sentinel2022,
-            "Sentinel-2 2021 (sem nuvens)": sentinel2021,
-            "Sentinel-2 2020 (sem nuvens)": sentinel2020,
-            "Sentinel-2 2019 (sem nuvens)": sentinel2019,
-            "Sentinel-2 2018 (sem nuvens)": sentinel2018,
-            "Sentinel-2 2017 (sem nuvens)": sentinel2017,
-            "Sentinel-2 2016 (sem nuvens)": sentinel2016,
-            "OpenStreetMap": osm,
-            "CartoDB Voyager": cartoDbVoy
+      lucide.createIcons();
+
+      // Base Neutral Tiles (Sem Carto Voyager pago)
+      const googleRelief = L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', { maxZoom: 18, attribution: '&copy; Google' });
+      const googleSat = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { maxZoom: 20, attribution: '&copy; Google' });
+      const esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '&copy; Esri' });
+      const cartoPositron = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19, attribution: '&copy; CARTO' });
+      const cartoDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19, attribution: '&copy; CARTO' });
+      const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' });
+
+      const baseLayers = {
+        "CARTO Dark (Escuro)": cartoDark,
+        "CARTO Positron (Claro)": cartoPositron,
+        "Google Relevo": googleRelief,
+        "Google Satellite": googleSat,
+        "ESRI World Imagery": esriSat,
+        "OpenStreetMap": osm
+      };
+
+      map = L.map('map', { center: [-5.0, -50.0], zoom: 6, layers: [cartoDark] });
+
+      try {
+        const [municipiosRes, ucsEstaduaisRes, ucsFederaisRes, regioesRes, quilombosEstaduaisRes, quilombosFederaisRes, terrasIndigenasRes] = await Promise.all([
+          fetch('data/municipios.geojson'),
+          fetch('data/ucs_estaduais.geojson'),
+          fetch('data/ucs_federais.geojson'),
+          fetch('data/regioes_integracao.geojson'),
+          fetch('data/quilombos_estaduais.geojson'),
+          fetch('data/quilombos_federais.geojson'),
+          fetch('data/terras_indigenas.geojson')
+        ]);
+
+        const [municipiosData, ucsEstaduaisData, ucsFederaisData, regioesData, quilombosEstaduaisData, quilombosFederaisData, terrasIndigenasData] = await Promise.all([
+          municipiosRes.json(), ucsEstaduaisRes.json(), ucsFederaisRes.json(), regioesRes.json(), quilombosEstaduaisRes.json(), quilombosFederaisRes.json(), terrasIndigenasRes.json()
+        ]);
+
+        originalLayers['Municípios'] = { features: municipiosData.features, leafletLayer: L.geoJSON(municipiosData, { style: getMunicipiosStyle }), styleFunc: getMunicipiosStyle };
+        originalLayers['Regiões de Integração'] = { features: regioesData.features, leafletLayer: L.geoJSON(regioesData, { style: getRegioesIntegracaoStyle }), styleFunc: getRegioesIntegracaoStyle };
+        originalLayers['UCs Estaduais'] = { features: ucsEstaduaisData.features, leafletLayer: L.geoJSON(ucsEstaduaisData, { style: getUcsEstaduaisStyle }), styleFunc: getUcsEstaduaisStyle };
+        originalLayers['Terras Indígenas'] = { features: terrasIndigenasData.features, leafletLayer: L.geoJSON(terrasIndigenasData, { style: getTerrasIndigenasStyle }), styleFunc: getTerrasIndigenasStyle };
+        originalLayers['UCs Federais'] = { features: ucsFederaisData.features, leafletLayer: L.geoJSON(ucsFederaisData, { style: getUcsFederaisStyle }), styleFunc: getUcsFederaisStyle };
+        originalLayers['Quilombos Estaduais'] = { features: quilombosEstaduaisData.features, leafletLayer: L.geoJSON(quilombosEstaduaisData, { style: getQuilombosEstaduaisStyle }), styleFunc: getQuilombosEstaduaisStyle };
+        originalLayers['Quilombos Federais'] = { features: quilombosFederaisData.features, leafletLayer: L.geoJSON(quilombosFederaisData, { style: getQuilombosFederaisStyle }), styleFunc: getQuilombosFederaisStyle };
+
+        const massaDaguaStyle = { 'water': getMassaDaguaVectorStyle() };
+        originalLayers['Massa d\'Água'] = {
+          leafletLayer: L.vectorGrid.protobuf("https://api.maptiler.com/tiles/0199583b-df1d-7f23-aa9f-46218575d630/{z}/{x}/{y}.pbf?key=dbXoCNZeIRs1oQK1BIPZ", { vectorTileLayerStyles: massaDaguaStyle }),
+          styleFunc: getMassaDaguaVectorStyle
         };
 
-        map = L.map('map', { center: [-5.0, -50.0], zoom: 6, layers: [googleRelief] });
-        
-        try {
-            const [municipiosRes, ucsEstaduaisRes, ucsFederaisRes, regioesRes, quilombosEstaduaisRes, quilombosFederaisRes, terrasIndigenasRes] = await Promise.all([
-              fetch('data/municipios.geojson'),
-              fetch('data/ucs_estaduais.geojson'),
-              fetch('data/ucs_federais.geojson'),
-              fetch('data/regioes_integracao.geojson'),
-              fetch('data/quilombos_estaduais.geojson'),
-              fetch('data/quilombos_federais.geojson'),
-              fetch('data/terras_indigenas.geojson')
-            ]);
-            
-            const [municipiosData, ucsEstaduaisData, ucsFederaisData, regioesData, quilombosEstaduaisData, quilombosFederaisData, terrasIndigenasData] = await Promise.all([
-              municipiosRes.json(), ucsEstaduaisRes.json(), ucsFederaisRes.json(), regioesRes.json(), quilombosEstaduaisRes.json(), quilombosFederaisRes.json(), terrasIndigenasRes.json()
-            ]);
-            
-            originalLayers['Municípios'] = {
-                features: municipiosData.features,
-                leafletLayer: L.geoJSON(municipiosData, { style: getMunicipiosStyle, onEachFeature: onEachFeature }),
-                styleFunc: getMunicipiosStyle
-            };
+        const overlayLayers = {
+          "Massa d'Água": originalLayers['Massa d\'Água'].leafletLayer,
+          "Quilombos Federais": originalLayers['Quilombos Federais'].leafletLayer,
+          "Quilombos Estaduais": originalLayers['Quilombos Estaduais'].leafletLayer,
+          "UCs Federais": originalLayers['UCs Federais'].leafletLayer,
+          "Terras Indígenas": originalLayers['Terras Indígenas'].leafletLayer,
+          "UCs Estaduais": originalLayers['UCs Estaduais'].leafletLayer,
+          "Regiões de Integração": originalLayers['Regiões de Integração'].leafletLayer,
+          "Municípios": originalLayers['Municípios'].leafletLayer,
+        };
 
-            originalLayers['Regiões de Integração'] = {
-                features: regioesData.features,
-                leafletLayer: L.geoJSON(regioesData, { style: getRegioesIntegracaoStyle, onEachFeature: onEachFeature }),
-                styleFunc: getRegioesIntegracaoStyle
-            };
+        L.control.layers(baseLayers, overlayLayers, { position: 'topright' }).addTo(map);
 
-            originalLayers['UCs Estaduais'] = {
-                features: ucsEstaduaisData.features,
-                leafletLayer: L.geoJSON(ucsEstaduaisData, { style: getUcsEstaduaisStyle, onEachFeature: onEachFeature }),
-                styleFunc: getUcsEstaduaisStyle
-            };
+        Object.values(originalLayers).forEach(l => l.leafletLayer?.addTo(map));
 
-            originalLayers['Terras Indígenas'] = {
-                features: terrasIndigenasData.features,
-                leafletLayer: L.geoJSON(terrasIndigenasData, { style: getTerrasIndigenasStyle, onEachFeature: onEachFeature }),
-                styleFunc: getTerrasIndigenasStyle
-            };
+        createLegend();
+        map.on('overlayadd overlayremove baselayerchange layeradd layerremove', updateLegend);
 
-            originalLayers['UCs Federais'] = {
-                features: ucsFederaisData.features,
-                leafletLayer: L.geoJSON(ucsFederaisData, { style: getUcsFederaisStyle, onEachFeature: onEachFeature }),
-                styleFunc: getUcsFederaisStyle
-            };
-            
-            originalLayers['Quilombos Estaduais'] = {
-                features: quilombosEstaduaisData.features,
-                leafletLayer: L.geoJSON(quilombosEstaduaisData, { style: getQuilombosEstaduaisStyle, onEachFeature: onEachFeature }),
-                styleFunc: getQuilombosEstaduaisStyle
-            };
+        const filterableLayers = { ...originalLayers };
+        delete filterableLayers['Massa d\'Água'];
+        populateLayerSelect(filterableLayers);
+        updateCount(0);
+        dlBtn.style.display = 'none';
 
-            originalLayers['Quilombos Federais'] = {
-                features: quilombosFederaisData.features,
-                leafletLayer: L.geoJSON(quilombosFederaisData, { style: getQuilombosFederaisStyle, onEachFeature: onEachFeature }),
-                styleFunc: getQuilombosFederaisStyle
-            };
-            
-            const massaDaguaStyle = {
-                'water': getMassaDaguaVectorStyle()
-            };
-            originalLayers['Massa d\'Água'] = {
-                leafletLayer: L.vectorGrid.protobuf("https://api.maptiler.com/tiles/0199583b-df1d-7f23-aa9f-46218575d630/{z}/{x}/{y}.pbf?key=dbXoCNZeIRs1oQK1BIPZ", {
-                    vectorTileLayerStyles: massaDaguaStyle,
-                }),
-                styleFunc: getMassaDaguaVectorStyle
-            };
+        if (originalLayers['Municípios'].leafletLayer && originalLayers['Municípios'].leafletLayer.getBounds().isValid()) {
+          map.flyToBounds(originalLayers['Municípios'].leafletLayer.getBounds());
+          originalMapBounds = map.getBounds();
+        }
 
-            const overlayLayers = {
-                "Massa d'Água": originalLayers['Massa d\'Água'].leafletLayer,
-                "Quilombos Federais": originalLayers['Quilombos Federais'].leafletLayer,
-                "Quilombos Estaduais": originalLayers['Quilombos Estaduais'].leafletLayer,
-                "UCs Federais": originalLayers['UCs Federais'].leafletLayer,
-                "Terras Indígenas": originalLayers['Terras Indígenas'].leafletLayer,
-                "UCs Estaduais": originalLayers['UCs Estaduais'].leafletLayer,
-                "Regiões de Integração": originalLayers['Regiões de Integração'].leafletLayer,
-                "Municípios": originalLayers['Municípios'].leafletLayer,
-            };
-            L.control.layers(baseLayers, overlayLayers).addTo(map);
+        map.on('click', showPopupForLayers);
 
-            originalLayers['Quilombos Federais']?.leafletLayer.addTo(map);
-            originalLayers['Quilombos Estaduais']?.leafletLayer.addTo(map);
-            originalLayers['UCs Federais']?.leafletLayer.addTo(map);
-            originalLayers['Terras Indígenas']?.leafletLayer.addTo(map);
-            originalLayers['UCs Estaduais']?.leafletLayer.addTo(map);
-            originalLayers['Regiões de Integração']?.leafletLayer.addTo(map);
-            originalLayers['Municípios']?.leafletLayer.addTo(map);
-            
-            
-            createLegend();
-            map.on('overlayadd', updateLegend);
-            map.on('overlayremove', updateLegend);
-            map.on('baselayerchange', updateLegend);
-            map.on('layeradd', updateLegend);
-            map.on('layerremove', updateLegend);
-            
-            const filterableLayers = { ...originalLayers };
-            delete filterableLayers['Massa d\'Água'];
-
-            populateLayerSelect(filterableLayers);
-            updateCount(0);
-            dlBtn.style.display = 'none';
-
-            // Salva os limites iniciais da camada de municípios e ajusta o zoom
-            if (originalLayers['Municípios'].leafletLayer && originalLayers['Municípios'].leafletLayer.getBounds().isValid()) {
-                map.flyToBounds(originalLayers['Municípios'].leafletLayer.getBounds());
-                originalMapBounds = map.getBounds();
-            }
-            
-            map.on('click', showPopupForLayers);
-
-            // Lógica de reordenação de camadas
-            populateLayerOrderList(overlayLayers);
-            new Sortable(layerOrderList, {
-              animation: 150,
-              ghostClass: 'sortable-ghost',
-              onEnd: function (evt) {
-                refreshLayerOrderOnMap();
-              },
-            });
-            refreshLayerOrderOnMap();
-
-          } catch (err) {
-            alert('Falha ao carregar os dados geoespaciais: ' + err.message);
-            console.error(err);
-          }
-
-        /* ---------- Eventos UI ---------- */
-        identifyBtn.addEventListener('click', () => {
-            identifyActive = !identifyActive;
-            identifyBtn.classList.toggle('active');
-            if (identifyActive) {
-                map.getContainer().style.cursor = 'crosshair';
-                identifyMenu.classList.add('active');
-                identifyCheckboxes.innerHTML = '';
-                Object.keys(originalLayers).forEach(layerName => {
-                    if (layerName !== 'Massa d\'Água') { 
-                        const label = document.createElement('label');
-                        label.className = 'flex items-center space-x-2';
-                        label.innerHTML = `
-                            <input type="checkbox" id="identify-${layerName}" checked class="form-checkbox text-blue-600">
-                            <span>${layerName}</span>
-                        `;
-                        identifyCheckboxes.appendChild(label);
-                    }
-                });
-            } else {
-                map.getContainer().style.cursor = '';
-                identifyMenu.classList.remove('active');
-            }
+        populateLayerOrderList(overlayLayers);
+        new Sortable(layerOrderList, {
+          animation: 150,
+          ghostClass: 'sortable-ghost',
+          onEnd: function () { refreshLayerOrderOnMap(); }
         });
+        refreshLayerOrderOnMap();
 
-        exitIdentifyBtn.addEventListener('click', () => {
-            identifyActive = false;
-            identifyBtn.classList.remove('active');
-            map.getContainer().style.cursor = '';
-            identifyMenu.classList.remove('active');
+      } catch (err) {
+        console.error('Erro ao carregar dados:', err);
+      }
+
+      /* ---------- Eventos UI & Tabs ---------- */
+      document.getElementById('tabLayersBtn').onclick = () => {
+        document.getElementById('tabLayersContent').classList.remove('hidden');
+        document.getElementById('tabFilterContent').classList.add('hidden');
+        document.getElementById('tabLayersBtn').className = 'flex-1 py-3 px-4 flex items-center justify-center gap-2 border-b-2 border-emerald-500 text-emerald-400 font-bold bg-slate-900/50';
+        document.getElementById('tabFilterBtn').className = 'flex-1 py-3 px-4 flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200 border-b-2 border-transparent';
+      };
+
+      document.getElementById('tabFilterBtn').onclick = () => {
+        document.getElementById('tabFilterContent').classList.remove('hidden');
+        document.getElementById('tabLayersContent').classList.add('hidden');
+        document.getElementById('tabFilterBtn').className = 'flex-1 py-3 px-4 flex items-center justify-center gap-2 border-b-2 border-emerald-500 text-emerald-400 font-bold bg-slate-900/50';
+        document.getElementById('tabLayersBtn').className = 'flex-1 py-3 px-4 flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200 border-b-2 border-transparent';
+      };
+
+      identifyBtn.onclick = () => {
+        identifyActive = !identifyActive;
+        identifyBtn.classList.toggle('bg-emerald-600', identifyActive);
+        document.body.classList.toggle('identify-active', identifyActive);
+        if (!identifyActive) inspectorSideSheet.classList.add('hidden');
+      };
+
+      toggleOutlineBtn.onclick = toggleOutlineMode;
+
+      resetViewBtn.onclick = () => {
+        if (originalMapBounds) map.flyToBounds(originalMapBounds);
+      };
+
+      layerSel.onchange = () => {
+        const layerName = layerSel.value;
+        activeLayerName = layerName;
+        if (!layerName) { colSel.disabled = true; valSel.disabled = true; return; }
+        populateColumns(layerName);
+      };
+
+      colSel.onchange = () => {
+        const colName = colSel.value;
+        if (!colName) { valSel.disabled = true; return; }
+        populateValues(activeLayerName, colName);
+      };
+
+      applyBtn.onclick = () => {
+        const layerName = layerSel.value;
+        const col = colSel.value;
+        const val = valSel.value;
+        if (!layerName) return;
+        const fc = filterFC(layerName, col, val);
+        refreshMap(fc, layerName);
+      };
+
+      clearBtn.onclick = () => {
+        layerSel.value = '';
+        colSel.innerHTML = ''; colSel.disabled = true;
+        valSel.innerHTML = ''; valSel.disabled = true;
+        updateCount(0);
+        dlBtn.style.display = 'none';
+
+        Object.values(originalLayers).forEach(l => {
+          if (!map.hasLayer(l.leafletLayer)) l.leafletLayer.addTo(map);
         });
+        if (originalMapBounds) map.flyToBounds(originalMapBounds);
+        updateLegend();
+      };
 
-        layerSel.addEventListener('change', () => {
-          const layerName = layerSel.value;
-          activeLayerName = layerName;
-          if (!layerName) {
-            colSel.innerHTML = '';
-            colSel.disabled = true;
-            valSel.innerHTML = '';
-            valSel.disabled = true;
-            updateCount(0);
-            dlBtn.style.display = 'none';
-            return;
-          }
-          populateColumns(layerName);
-          valSel.innerHTML = '';
-          valSel.disabled = true;
-        });
+      // Theme toggle
+      document.getElementById('themeToggleBtn').onclick = () => {
+        document.documentElement.classList.toggle('dark');
+        document.documentElement.classList.toggle('light');
+      };
 
-        colSel.addEventListener('change', () => {
-          const col = colSel.value;
-          if (!col) {
-            valSel.innerHTML = '';
-            valSel.disabled = true;
-            updateCount(0);
-            dlBtn.style.display = 'none';
-            return;
-          }
-          populateValues(activeLayerName, col);
-          valSel.disabled = false;
-          valSel.value = '__ALL__';
-        });
+      // About Modal
+      document.getElementById('aboutAppBtn').onclick = () => {
+        document.getElementById('aboutAppModal').classList.add('show');
+      };
+      document.getElementById('closeModalBtn').onclick = () => {
+        document.getElementById('aboutAppModal').classList.remove('show');
+      };
 
-        applyBtn.addEventListener('click', () => {
-          if (!activeLayerName) {
-            updateCount(0);
-            dlBtn.style.display = 'none';
-            return;
-          }
-
-          const col = colSel.value;
-          const val = valSel.value;
-          const filtered = filterFC(activeLayerName, col, val);
-          refreshMap(filtered, activeLayerName);
-
-          dlBtn.style.display = 'inline';
-        });
-        
-        valSel.addEventListener('change', () => {
-          // Nada acontece aqui, o filtro só será aplicado ao clicar no botão.
-        });
-
-        clearBtn.addEventListener('click', () => {
-          if (map.hasLayer(filteredLayerGroup)) {
-              map.removeLayer(filteredLayerGroup);
-          }
-          filteredLayerGroup.clearLayers();
-          isFilterActive = false;
-          
-          layerSel.value = '';
-          colSel.value = '';
-          colSel.disabled = true;
-          valSel.value = '';
-          valSel.disabled = true;
-          activeLayerName = null;
-          updateCount(0);
-          dlBtn.style.display = 'none';
-          
-          // Adiciona de volta as camadas originais ao mapa
-          Object.keys(originalLayers).forEach(layerName => {
-              const layer = originalLayers[layerName]?.leafletLayer;
-              if (layer && !map.hasLayer(layer)) {
-                  map.addLayer(layer);
-              }
-          });
-
-          // Garante que a ordem inicial seja reestabelecida
-          populateLayerOrderList(originalLayers);
-          refreshLayerOrderOnMap();
-
-          if (originalMapBounds) {
-              map.flyToBounds(originalMapBounds);
-          }
-        });
-        
-        // Adiciona eventos de mouse para o menu de identificação
-        const identifyMenuContainer = document.getElementById('identifyControl');
-        let identifyMenuTimeout;
-        identifyMenuContainer.addEventListener('mouseenter', () => {
-          clearTimeout(identifyMenuTimeout);
-          identifyMenu.classList.add('active');
-        });
-        identifyMenuContainer.addEventListener('mouseleave', () => {
-          identifyMenuTimeout = setTimeout(() => {
-            identifyMenu.classList.remove('active');
-          }, 300); // 300ms de delay para evitar que o menu desapareça acidentalmente
-        });
-        toggleOutlineBtn.addEventListener('click', toggleOutlineMode);
-
-        /* ---------- Modal para informações sobre o app ---------- */
-        const aboutAppBtn = document.getElementById('aboutAppBtn');
-        const aboutAppModal = document.getElementById('aboutAppModal');
-        const closeModalBtn = document.getElementById('closeModalBtn');
-        const docLinkBtn = document.getElementById('docLinkBtn'); // Adicionar um ID ao link na modal
-
-        aboutAppBtn.addEventListener('click', () => {
-          aboutAppModal.classList.add('show');
-        });
-
-        closeModalBtn.addEventListener('click', () => {
-          aboutAppModal.classList.remove('show');
-        });
-
-        aboutAppModal.addEventListener('click', (e) => {
-          if (e.target === aboutAppModal) {
-            aboutAppModal.classList.remove('show');
-          }
-        });
-        }; 
+      // Mobile Sidebar Toggle
+      document.getElementById('toggleSidebarBtn').onclick = () => {
+        document.getElementById('sidebar').classList.toggle('-translate-x-full');
+      };
+    };
   </script>
 </body>
 </html>
