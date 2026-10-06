@@ -640,15 +640,17 @@
     window.onload = async function () {
       lucide.createIcons();
 
-      // Base Neutral Tiles (Sem Carto Voyager pago)
+      // Base Neutral Tiles (Com chave de API CARTO fornecida pelo usuário)
+      const cartoVoyager = L.tileLayer('https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=cb1_3yt4_1_0d68b5481f8f21f4fb4baffa', { maxZoom: 19, attribution: '&copy; CARTO' });
+      const cartoPositron = L.tileLayer('https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png?key=cb1_3yt4_1_0d68b5481f8f21f4fb4baffa', { maxZoom: 19, attribution: '&copy; CARTO' });
+      const cartoDark = L.tileLayer('https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png?key=cb1_3yt4_1_0d68b5481f8f21f4fb4baffa', { maxZoom: 19, attribution: '&copy; CARTO' });
       const googleRelief = L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', { maxZoom: 18, attribution: '&copy; Google' });
       const googleSat = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { maxZoom: 20, attribution: '&copy; Google' });
       const esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '&copy; Esri' });
-      const cartoPositron = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19, attribution: '&copy; CARTO' });
-      const cartoDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19, attribution: '&copy; CARTO' });
       const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' });
 
       const baseLayers = {
+        "Carto Voyager (Chave Ativa)": cartoVoyager,
         "CARTO Dark (Escuro)": cartoDark,
         "CARTO Positron (Claro)": cartoPositron,
         "Google Relevo": googleRelief,
@@ -657,7 +659,7 @@
         "OpenStreetMap": osm
       };
 
-      map = L.map('map', { center: [-5.0, -50.0], zoom: 6, layers: [cartoDark] });
+      map = L.map('map', { center: [-5.0, -50.0], zoom: 6, layers: [cartoVoyager] });
 
       try {
         const [municipiosRes, ucsEstaduaisRes, ucsFederaisRes, regioesRes, quilombosEstaduaisRes, quilombosFederaisRes, terrasIndigenasRes] = await Promise.all([
