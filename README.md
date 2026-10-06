@@ -1,63 +1,96 @@
-# Visualizador Geoespacial do IDEFLOR-Bio
+# 🗺️ Visualizador Geoespacial do IDEFLOR-Bio
 
-Este é um aplicativo web interativo para visualização e análise de dados geoespaciais, desenvolvido para o Instituto de Desenvolvimento Florestal e da Biodiversidade do Estado do Pará (IDEFLOR-Bio). A ferramenta foi criada para facilitar a consulta e a exploração de diversas camadas geográficas do estado do Pará.
+Este é um aplicativo web interativo de **Sistema de Informação Geográfica (WebGIS)** desenvolvido para o **Instituto de Desenvolvimento Florestal e da Biodiversidade do Estado do Pará (IDEFLOR-Bio)**. A ferramenta foi projetada para otimizar a consulta, visualização e análise de dados territoriais e socioambientais do Estado do Pará em reuniões técnicas e tomada de decisão.
 
-## Visão Geral
+---
 
-O projeto consiste em um mapa interativo que exibe diversas camadas de informações geográficas, como limites de municípios e regiões de integração, unidades de conservação, terras indígenas e massas d'água. Ele oferece funcionalidades de filtragem e identificação para uma análise mais detalhada dos dados.
+## 🌟 Visão Geral
+
+O **Visualizador Geoespacial** reúne em um único portal vetores geográficos essenciais, como limites de municípios, regiões de integração, unidades de conservação estaduais e federais, terras indígenas, territórios quilombolas e hidrografia.
+
+A aplicação conta com uma interface moderna em **Tailwind CSS**, suporte a **Modo Escuro / Claro**, painel lateral retrátil, reordenação de camadas por *drag-and-drop*, controle individual de opacidade, ferramenta de identificação pontual com balão em ponto real, filtros por atributos com download em GeoJSON e mapas base neutros e de satélite.
 
 **Screenshot da Interface Inicial:**
 
 ![Interface Inicial](demo/inicial.png)
 
-## Funcionalidades
+---
 
-### 1. Visualização de Múltiplas Camadas e Legenda
+## ⚡ Funcionalidades
 
-O mapa exibe várias camadas de dados geoespaciais que podem ser ativadas ou desativadas através do controle de camadas no canto superior direito. Uma legenda dinâmica no canto inferior direito mostra as cores e símbolos das camadas visíveis.
+### 1. Seletor de Camadas & Controle de Opacidade
 
-**Screenshot da Legenda:**
-
-![Legenda](demo/legenda.png)
-
-### 2. Filtro por Atributos
-
-A janela de filtro no canto superior esquerdo permite que os usuários selecionem uma camada, escolham uma coluna de seus atributos e apliquem um filtro com base em um valor específico. Isso é ideal para isolar e visualizar feições com características em comum.
-
-**Screenshot do Filtro de Camadas:**
-
-![Filtro de Camadas](demo/filtro.png)
-
-### 3. Seletor de Camadas
-
-É possível ativar ou desativar diferentes camadas do mapa, como municípios, regiões de integração, UCs estaduais e federais, terras indígenas e territórios quilombolas.
+Permite ativar ou desativar camadas temáticas (Municípios, Regiões de Integração, UCs Estaduais/Federais, Terras Indígenas, Quilombos e Massa d'Água) e ajustar a transparência individual de cada camada em tempo real de 0% a 100%.
 
 **Screenshot do Seletor de Camadas:**
 
 ![Seletor de Camadas](demo/seletor_camadas.png)
 
-### 4. Ferramenta de Identificação (`Identify`)
+### 2. Reordenação Interativa de Camadas (Drag-and-Drop)
 
-Similar a um SIG (Sistema de Informação Geográfica), a ferramenta de identificação permite ao usuário clicar em qualquer ponto do mapa para obter informações de todas as camadas visíveis naquele local.
-
-### 5. Reordenação de Camadas
-
-O painel de controle agora possui uma lista interativa que permite ao usuário reordenar as camadas temáticas. Basta clicar e arrastar uma camada para a posição desejada para alterar a ordem de exibição no mapa, definindo quais polígonos aparecem na frente dos outros.
+O painel de controle possui uma lista interativa baseada em *Sortable.js* que permite arrastar e soltar as camadas para definir a ordem exata de exibição no mapa (quais polígonos ficam sobrepostos à frente).
 
 **Screenshot da Reordenação de Camadas:**
 
 ![Reordenação de Camadas](demo/ordenar_camadas.png)
 
+### 3. Filtro por Atributos & Download GeoJSON
+
+Permite isolar feições selecionando a camada, coluna de atributos e valor desejado. Exibe a contagem exata de itens selecionados e permite o download imediato dos dados filtrados no formato GeoJSON. Para Municípios e Regiões de Integração, calcula também todas as UCs, Terras Indígenas e Quilombos sobrepostos.
+
+**Screenshot do Filtro por Atributos:**
+
+![Filtro de Camadas](demo/filtro.png)
+
+**Screenshot do Download de Dados:**
+
+![Download de Dados](demo/download.png)
+
+### 4. Ferramenta de Identificação (`Identify`) com Balão Ancorado
+
+Similar aos SIGs profissionais, permite clicar em qualquer ponto do mapa para abrir um **Balão Popup ancorado** (`z-index: 99999`) trazendo a lista de atributos de todas as camadas visíveis ou filtradas naquele local. Inclui um menu de seleção de quais camadas devem ser consultadas.
+
+**Screenshot da Ferramenta de Identificação:**
+
+![Ferramenta de Identificação](demo/identificador.png)
+
+### 5. Modo Contorno (Outline)
+
+Alterna a renderização de polígonos entre preenchimento sólido e contorno espesso vazado, ideal para analisar imagens de satélite e sobreposição de limites sem obstrução visual.
+
+**Screenshot do Modo Contorno:**
+
+![Modo Contorno](demo/modo_outline.png)
+
+### 6. Legenda Dinâmica e Controles Responsivos
+
+Uma legenda dinâmica no canto inferior direito exibe as cores e estilos das camadas ativas. Os botões de zoom `+` / `-` ficam situados no canto inferior esquerdo e toda a interface é 100% responsiva para dispositivos móveis e tablets.
+
+**Screenshot da Legenda:**
+
+![Legenda](demo/legenda.png)
+
 ---
 
-## Tecnologias Utilizadas
+## 🛠️ Tecnologias Utilizadas
 
-- **HTML, CSS (Tailwind CSS)** e **JavaScript**: Para a estrutura e lógica da aplicação.
-- **Leaflet.js**: Biblioteca de mapas de código aberto para exibir e interagir com os dados geoespaciais.
-- **Leaflet.VectorGrid**: Plugin para renderizar camadas vetoriais a partir de Vector Tiles, otimizando o desempenho para grandes volumes de dados.
-- **GeoJSON**: Formato de dados para as camadas de limite.
-- **Vector Tiles**: Formato de dados otimizado para a camada de Massa d'Água, garantindo um carregamento rápido e uma navegação fluida em diferentes níveis de zoom.
+* **HTML5, CSS3 (Tailwind CSS v3)** e **JavaScript ES6+**: Para estrutura, estilização responsiva e lógica de aplicação.
+* **Leaflet.js (v1.9.4)**: Biblioteca de mapas interativos de alta performance.
+* **Leaflet.VectorGrid**: Renderização de camadas vetoriais pesadas (Massa d'Água) via Vector Tiles (Protobuf PBF).
+* **Sortable.js**: Reordenação intuitiva de camadas por *drag-and-drop*.
+* **Lucide Icons**: Iconografia moderna e legível.
+* **GeoJSON**: Formato de dados geoespaciais padronizado.
+* **Provedores de Tiles (CARTO Voyager / Dark / Positron, Google Satellite & Relevo, Esri World Imagery, OpenStreetMap)**.
 
-## Como Usar
+---
 
-Acesse o link: [https://ngeo-ideflor-bio.github.io/visualizador/](https://ngeo-ideflor-bio.github.io/visualizador/)
+## 🌐 Como Usar
+
+Acesse a aplicação web diretamente pelo link:  
+🔗 **[https://ngeo-ideflor-bio.github.io/visualizador/](https://ngeo-ideflor-bio.github.io/visualizador/)**
+
+---
+
+## 📄 Licença
+
+Desenvolvido para o **IDEFLOR-Bio / Governo do Estado do Pará**.
