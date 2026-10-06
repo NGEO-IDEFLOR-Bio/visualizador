@@ -1,10 +1,10 @@
-# 🗺️ Visualizador Geoespacial do IDEFLOR-Bio
+# Visualizador Geoespacial do IDEFLOR-Bio
 
 Este é um aplicativo web interativo de **Sistema de Informação Geográfica (WebGIS)** desenvolvido para o **Instituto de Desenvolvimento Florestal e da Biodiversidade do Estado do Pará (IDEFLOR-Bio)**. A ferramenta foi projetada para otimizar a consulta, visualização e análise de dados territoriais e socioambientais do Estado do Pará em reuniões técnicas e tomada de decisão.
 
 ---
 
-## 🌟 Visão Geral
+## Visão Geral
 
 O **Visualizador Geoespacial** reúne em um único portal vetores geográficos essenciais, como limites de municípios, regiões de integração, unidades de conservação estaduais e federais, terras indígenas, territórios quilombolas e hidrografia.
 
@@ -16,7 +16,7 @@ A aplicação conta com uma interface moderna em **Tailwind CSS**, suporte a **M
 
 ---
 
-## ⚡ Funcionalidades
+## Funcionalidades
 
 ### 1. Seletor de Camadas & Controle de Opacidade
 
@@ -72,7 +72,7 @@ Uma legenda dinâmica no canto inferior direito exibe as cores e estilos das cam
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+## Tecnologias Utilizadas
 
 * **HTML5, CSS3 (Tailwind CSS v3)** e **JavaScript ES6+**: Para estrutura, estilização responsiva e lógica de aplicação.
 * **Leaflet.js (v1.9.4)**: Biblioteca de mapas interativos de alta performance.
@@ -84,13 +84,13 @@ Uma legenda dinâmica no canto inferior direito exibe as cores e estilos das cam
 
 ---
 
-## 🌐 Como Usar
+## Como Usar
 
 Acesse a aplicação web diretamente pelo link:  
-🔗 **[https://ngeo-ideflor-bio.github.io/visualizador/](https://ngeo-ideflor-bio.github.io/visualizador/)**
+[https://ngeo-ideflor-bio.github.io/visualizador/](https://ngeo-ideflor-bio.github.io/visualizador/)
 
 ---
 
-## 📄 Licença
+## Licença
 
 Desenvolvido para o **IDEFLOR-Bio / Governo do Estado do Pará**.
