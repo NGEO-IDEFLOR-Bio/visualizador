@@ -219,29 +219,40 @@
     <!-- RIGHT MAP CANVAS & FLOATING TOOL DOCK -->
     <div class="flex-1 relative h-full">
       
-      <!-- FLOATING MAP ACTION TOOLBAR (TOP LEFT DOCK - SEM SOBREPOSIÇÃO) -->
-      <div id="mapActionControls" class="absolute top-3 left-3 z-20 flex items-center gap-2 bg-slate-900/90 backdrop-blur-md p-1.5 rounded-2xl border border-slate-700/80 shadow-2xl">
-        <!-- Identify Feature Tool -->
-        <button id="identifyBtn" class="bg-slate-800/80 hover:bg-slate-700 text-slate-200 py-1.5 px-3 rounded-xl transition flex items-center gap-2 group" title="Identificar Feições no Mapa">
-          <i data-lucide="mouse-pointer-click" class="w-4 h-4 text-emerald-400 group-hover:scale-110 transition"></i>
-          <span class="text-xs font-semibold">Identificar</span>
-        </button>
+      <!-- FLOATING MAP ACTION TOOLBAR (TOP LEFT DOCK) -->
+      <div class="absolute top-3 left-3 z-20 flex flex-col gap-2">
+        <div id="mapActionControls" class="flex items-center gap-2 bg-slate-900/90 backdrop-blur-md p-1.5 rounded-2xl border border-slate-700/80 shadow-2xl">
+          <!-- Identify Feature Tool -->
+          <button id="identifyBtn" class="bg-slate-800/80 hover:bg-slate-700 text-slate-200 py-1.5 px-3 rounded-xl transition flex items-center gap-2 group" title="Identificar Feições no Mapa">
+            <i data-lucide="mouse-pointer-click" class="w-4 h-4 text-emerald-400 group-hover:scale-110 transition"></i>
+            <span class="text-xs font-semibold">Identificar</span>
+          </button>
 
-        <div class="h-4 w-px bg-slate-700"></div>
+          <div class="h-4 w-px bg-slate-700"></div>
 
-        <!-- Toggle Outline Mode Tool -->
-        <button id="toggleOutlineBtn" class="bg-slate-800/80 hover:bg-slate-700 text-slate-200 py-1.5 px-3 rounded-xl transition flex items-center gap-2 group" title="Alternar Modo Contorno">
-          <i data-lucide="square" class="w-4 h-4 text-amber-400 group-hover:scale-110 transition"></i>
-          <span class="text-xs font-semibold">Contornos</span>
-        </button>
+          <!-- Toggle Outline Mode Tool -->
+          <button id="toggleOutlineBtn" class="bg-slate-800/80 hover:bg-slate-700 text-slate-200 py-1.5 px-3 rounded-xl transition flex items-center gap-2 group" title="Alternar Modo Contorno">
+            <i data-lucide="square" class="w-4 h-4 text-amber-400 group-hover:scale-110 transition"></i>
+            <span class="text-xs font-semibold">Contornos</span>
+          </button>
 
-        <div class="h-4 w-px bg-slate-700"></div>
+          <div class="h-4 w-px bg-slate-700"></div>
 
-        <!-- Reset Map Extent Tool -->
-        <button id="resetViewBtn" class="bg-slate-800/80 hover:bg-slate-700 text-slate-200 py-1.5 px-3 rounded-xl transition flex items-center gap-2 group" title="Resetar Visão para o Pará">
-          <i data-lucide="maximize" class="w-4 h-4 text-cyan-400 group-hover:scale-110 transition"></i>
-          <span class="text-xs font-semibold">Visão Geral</span>
-        </button>
+          <!-- Reset Map Extent Tool -->
+          <button id="resetViewBtn" class="bg-slate-800/80 hover:bg-slate-700 text-slate-200 py-1.5 px-3 rounded-xl transition flex items-center gap-2 group" title="Resetar Visão para o Pará">
+            <i data-lucide="maximize" class="w-4 h-4 text-cyan-400 group-hover:scale-110 transition"></i>
+            <span class="text-xs font-semibold">Visão Geral</span>
+          </button>
+        </div>
+
+        <!-- IDENTIFY LAYER SELECTION POPOVER -->
+        <div id="identifyMenu" class="hidden glass-panel p-3 rounded-2xl border border-slate-700 shadow-2xl w-64 text-xs space-y-2">
+          <div class="flex items-center justify-between font-bold text-white border-b border-slate-800 pb-1.5">
+            <span class="flex items-center gap-1.5"><i data-lucide="filter" class="w-3.5 h-3.5 text-emerald-400"></i> Identificar Camadas:</span>
+            <button id="toggleAllIdentifyBtn" type="button" class="text-[10px] text-emerald-400 hover:underline">Todas / Nenhuma</button>
+          </div>
+          <div id="identifyCheckboxes" class="space-y-1.5 max-h-48 overflow-y-auto pt-1"></div>
+        </div>
       </div>
 
       <!-- MAP CONTAINER -->
@@ -336,7 +347,33 @@
 
     const getMassaDaguaVectorStyle = () => ({ weight: 0.5, color: '#78d4e9', opacity: 1, fillColor: '#78d4e9', fillOpacity: layerOpacities['Massa d\'Água'] ?? 0.8 });
 
-    /* ---------- Identify Inspector Side-Sheet ---------- */
+    /* ---------- Identify Inspector Side-Sheet & Filter ---------- */
+    function renderIdentifyCheckboxes() {
+      const container = document.getElementById('identifyCheckboxes');
+      if (!container || container.children.length > 0) return;
+
+      container.innerHTML = '';
+      Object.keys(originalLayers).forEach(layerName => {
+        if (layerName === 'Massa d\'Água') return;
+        const label = document.createElement('label');
+        label.className = 'flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-800/80 cursor-pointer text-slate-200 text-xs';
+        label.innerHTML = `
+          <span>${layerName}</span>
+          <input type="checkbox" id="identify-chk-${layerName}" checked class="accent-emerald-500 w-4 h-4 rounded cursor-pointer">
+        `;
+        container.appendChild(label);
+      });
+
+      const toggleBtn = document.getElementById('toggleAllIdentifyBtn');
+      if (toggleBtn) {
+        toggleBtn.onclick = () => {
+          const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+          const anyUnchecked = Array.from(checkboxes).some(c => !c.checked);
+          checkboxes.forEach(c => c.checked = anyUnchecked);
+        };
+      }
+    }
+
     function showPopupForLayers(e) {
       if (!identifyActive) return;
 
@@ -345,6 +382,11 @@
 
       layersToCheck.forEach(layerName => {
         if (layerName === 'Massa d\'Água') return;
+
+        // Verifica se a camada está checada no filtro do Identificador
+        const chk = document.getElementById(`identify-chk-${layerName}`);
+        if (chk && !chk.checked) return;
+
         const layerData = originalLayers[layerName];
         if (layerData && map.hasLayer(layerData.leafletLayer)) {
           const layerGroup = layerData.leafletLayer;
@@ -782,7 +824,16 @@
         identifyActive = !identifyActive;
         identifyBtn.classList.toggle('bg-emerald-600', identifyActive);
         document.body.classList.toggle('identify-active', identifyActive);
-        if (!identifyActive) inspectorSideSheet.classList.add('hidden');
+
+        const menu = document.getElementById('identifyMenu');
+        if (identifyActive) {
+          menu.classList.remove('hidden');
+          renderIdentifyCheckboxes();
+        } else {
+          menu.classList.add('hidden');
+          inspectorSideSheet.classList.add('translate-x-full');
+          setTimeout(() => inspectorSideSheet.classList.add('hidden'), 300);
+        }
       };
 
       toggleOutlineBtn.onclick = toggleOutlineMode;
