@@ -542,15 +542,40 @@
       if (isOutlineModeActive && primaryStyle.fillColor && primaryStyle.fillColor !== 'transparent') {
         primaryStyle = { ...primaryStyle, color: primaryStyle.fillColor, fillOpacity: 0, weight: 3 };
       }
-      const primaryFilteredLayer = L.geoJSON(fc, { pane: originalLayers[layerName].pane, style: primaryStyle });
+      const primaryFilteredLayer = L.geoJSON(fc, { style: primaryStyle });
       filteredResultsGroup.addLayer(primaryFilteredLayer);
       currentFilteredFC.features.push(...fc.features);
 
+      // Filtro por sobreposição para Municípios ou Regiões de Integração
+      if ((layerName === 'Municípios' || layerName === 'Regiões de Integração') && valSel.value && valSel.value !== '__ALL__') {
+        const otherLayers = Object.keys(originalLayers).filter(name => name !== 'Municípios' && name !== 'Regiões de Integração' && name !== 'Massa d\'Água');
+        
+        otherLayers.forEach(otherLayerName => {
+          const otherLayerData = originalLayers[otherLayerName];
+          const column = layerName === 'Municípios' ? 'Municipios_lista' : 'RegioesIntegracao_lista';
+          const filteredFeatures = otherLayerData.features ? otherLayerData.features.filter(f => {
+            const valList = f?.properties?.[column]?.split(',').map(v => norm(v));
+            return valList && valList.includes(norm(valSel.value));
+          }) : [];
+          
+          if (filteredFeatures.length > 0) {
+            let otherStyle = otherLayerData.styleFunc ? otherLayerData.styleFunc() : {};
+            if (isOutlineModeActive && otherStyle.fillColor && otherStyle.fillColor !== 'transparent') {
+              otherStyle = { ...otherStyle, color: otherStyle.fillColor, fillOpacity: 0, weight: 3 };
+            }
+            const newLayer = L.geoJSON({ type: 'FeatureCollection', features: filteredFeatures }, { style: otherStyle });
+            filteredResultsGroup.addLayer(newLayer);
+            currentFilteredFC.features.push(...filteredFeatures);
+          }
+        });
+      }
+
       filteredResultsGroup.addTo(map);
-      if (filteredResultsGroup.getLayers().length > 0) {
+      if (filteredResultsGroup.getLayers().length > 0 && filteredResultsGroup.getBounds().isValid()) {
         map.flyToBounds(filteredResultsGroup.getBounds(), { padding: [30,30], duration: 0.6, maxZoom: 13 });
       }
 
+      updateCount(currentFilteredFC.features.length);
       buildDownload(currentFilteredFC);
       updateLegend();
     }
