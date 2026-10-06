@@ -219,24 +219,28 @@
     <!-- RIGHT MAP CANVAS & FLOATING TOOL DOCK -->
     <div class="flex-1 relative h-full">
       
-      <!-- FLOATING MAP ACTION TOOLBAR (TOP RIGHT DOCK) -->
-      <div id="mapActionControls" class="absolute top-4 right-4 z-20 flex flex-col gap-2">
+      <!-- FLOATING MAP ACTION TOOLBAR (TOP LEFT DOCK - SEM SOBREPOSIÇÃO) -->
+      <div id="mapActionControls" class="absolute top-3 left-3 z-20 flex items-center gap-2 bg-slate-900/90 backdrop-blur-md p-1.5 rounded-2xl border border-slate-700/80 shadow-2xl">
         <!-- Identify Feature Tool -->
-        <button id="identifyBtn" class="bg-slate-900/90 hover:bg-slate-800 text-slate-200 p-2.5 rounded-xl border border-slate-700 shadow-xl transition flex items-center gap-2 group" title="Identificar Feições no Mapa">
-          <i data-lucide="mouse-pointer-click" class="w-5 h-5 text-emerald-400 group-hover:scale-110 transition"></i>
-          <span class="text-xs font-semibold pr-1 hidden sm:inline">Identificar</span>
+        <button id="identifyBtn" class="bg-slate-800/80 hover:bg-slate-700 text-slate-200 py-1.5 px-3 rounded-xl transition flex items-center gap-2 group" title="Identificar Feições no Mapa">
+          <i data-lucide="mouse-pointer-click" class="w-4 h-4 text-emerald-400 group-hover:scale-110 transition"></i>
+          <span class="text-xs font-semibold">Identificar</span>
         </button>
+
+        <div class="h-4 w-px bg-slate-700"></div>
 
         <!-- Toggle Outline Mode Tool -->
-        <button id="toggleOutlineBtn" class="bg-slate-900/90 hover:bg-slate-800 text-slate-200 p-2.5 rounded-xl border border-slate-700 shadow-xl transition flex items-center gap-2 group" title="Alternar Modo Contorno">
-          <i data-lucide="square" class="w-5 h-5 text-amber-400 group-hover:scale-110 transition"></i>
-          <span class="text-xs font-semibold pr-1 hidden sm:inline">Contornos</span>
+        <button id="toggleOutlineBtn" class="bg-slate-800/80 hover:bg-slate-700 text-slate-200 py-1.5 px-3 rounded-xl transition flex items-center gap-2 group" title="Alternar Modo Contorno">
+          <i data-lucide="square" class="w-4 h-4 text-amber-400 group-hover:scale-110 transition"></i>
+          <span class="text-xs font-semibold">Contornos</span>
         </button>
 
+        <div class="h-4 w-px bg-slate-700"></div>
+
         <!-- Reset Map Extent Tool -->
-        <button id="resetViewBtn" class="bg-slate-900/90 hover:bg-slate-800 text-slate-200 p-2.5 rounded-xl border border-slate-700 shadow-xl transition flex items-center gap-2 group" title="Resetar Visão para o Pará">
-          <i data-lucide="maximize" class="w-5 h-5 text-cyan-400 group-hover:scale-110 transition"></i>
-          <span class="text-xs font-semibold pr-1 hidden sm:inline">Visão Geral</span>
+        <button id="resetViewBtn" class="bg-slate-800/80 hover:bg-slate-700 text-slate-200 py-1.5 px-3 rounded-xl transition flex items-center gap-2 group" title="Resetar Visão para o Pará">
+          <i data-lucide="maximize" class="w-4 h-4 text-cyan-400 group-hover:scale-110 transition"></i>
+          <span class="text-xs font-semibold">Visão Geral</span>
         </button>
       </div>
 
