@@ -111,6 +111,11 @@
       cursor: crosshair !important;
     }
 
+    /* Garantir que o Balão do Identificador fique por cima de TODOS os elementos */
+    .leaflet-popup-pane, .leaflet-popup {
+      z-index: 99999 !important;
+    }
+
     /* Estilo do Balão do Identificador (Leaflet Popup) */
     .leaflet-popup-content-wrapper {
       background: rgba(15, 23, 42, 0.96) !important;
