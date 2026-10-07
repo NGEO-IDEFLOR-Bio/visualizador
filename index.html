@@ -454,16 +454,23 @@
     /* ---------- Identify Inspector Side-Sheet & Filter ---------- */
     function renderIdentifyCheckboxes() {
       const container = document.getElementById('identifyCheckboxes');
-      if (!container || container.children.length > 0) return;
+      if (!container) return;
+
+      const checkedState = {};
+      container.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+        const name = chk.id.replace('identify-chk-', '');
+        checkedState[name] = chk.checked;
+      });
 
       container.innerHTML = '';
       Object.keys(originalLayers).forEach(layerName => {
         if (layerName === 'Massa d\'Água') return;
+        const isChecked = checkedState[layerName] !== undefined ? checkedState[layerName] : true;
         const label = document.createElement('label');
         label.className = 'flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-800/80 cursor-pointer text-slate-200 text-xs';
         label.innerHTML = `
           <span>${layerName}</span>
-          <input type="checkbox" id="identify-chk-${layerName}" checked class="accent-emerald-500 w-4 h-4 rounded cursor-pointer">
+          <input type="checkbox" id="identify-chk-${layerName}" ${isChecked ? 'checked' : ''} class="accent-emerald-500 w-4 h-4 rounded cursor-pointer">
         `;
         container.appendChild(label);
       });
@@ -556,9 +563,24 @@
 
         const layerData = originalLayers[layerName];
         if (layerData && map.hasLayer(layerData.leafletLayer)) {
-          const layerGroup = layerData.leafletLayer;
-          if (layerGroup.eachLayer) {
-            layerGroup.eachLayer(layer => {
+          // Checa o array direto de features (GeoJSON direct)
+          if (layerData.features && Array.isArray(layerData.features)) {
+            layerData.features.forEach(feat => {
+              if (feat && feat.geometry) {
+                if (isPointInGeometry(e.latlng, feat.geometry)) {
+                  const featKey = `${layerName}::${JSON.stringify(feat.properties)}`;
+                  if (!featureKeys.has(featKey)) {
+                    featureKeys.add(featKey);
+                    foundFeatures.push({
+                      layerName: layerName,
+                      properties: feat.properties
+                    });
+                  }
+                }
+              }
+            });
+          } else if (layerData.leafletLayer && layerData.leafletLayer.eachLayer) {
+            layerData.leafletLayer.eachLayer(layer => {
               if (layer.feature && layer.feature.geometry) {
                 if (isPointInGeometry(e.latlng, layer.feature.geometry)) {
                   const featKey = `${layerName}::${JSON.stringify(layer.feature.properties)}`;
