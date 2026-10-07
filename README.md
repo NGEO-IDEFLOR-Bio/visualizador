@@ -62,7 +62,19 @@ Alterna a renderização de polígonos entre preenchimento sólido e contorno es
 
 ![Modo Contorno](demo/modo_outline.png)
 
-### 6. Legenda Dinâmica e Controles Responsivos
+### 6. Subir Arquivo Vetorial (Shapefile .zip, KML, GeoJSON)
+
+Permite carregar arquivos geoespaciais locais diretamente no navegador através do botão **Subir Arquivo** na barra superior. Suporta arquivos **Shapefile (.zip)**, **KML (.kml)** e **GeoJSON (.geojson / .json)**. O processamento é realizado 100% no client-side (compatível com GitHub Pages), realizando centralização automática no mapa (*flyToBounds*) e adicionando o vetor à legenda e lista de camadas.
+
+**Screenshot do Carregamento de Vetor:**
+
+![Subir Arquivo Vetorial](demo/subir_arquivo.png)
+
+### 7. Zoneamento das UCs Estaduais
+
+Inclui os zoneamentos das Unidades de Conservação Estaduais do Pará com simbologia institucional categorizada (Preservação, Conservação, Amortecimento, Uso Moderado, Uso Intensivo, Produção, Recuperação). A camada inicia **desligada por padrão** para garantir leveza na inicialização, sendo suportada no modo preenchido e contorno (Outline).
+
+### 8. Legenda Dinâmica e Controles Responsivos
 
 Uma legenda dinâmica no canto inferior direito exibe as cores e estilos das camadas ativas. Os botões de zoom `+` / `-` ficam situados no canto inferior esquerdo e toda a interface é 100% responsiva para dispositivos móveis e tablets.
 
@@ -76,6 +88,7 @@ Uma legenda dinâmica no canto inferior direito exibe as cores e estilos das cam
 
 * **HTML5, CSS3 (Tailwind CSS v3)** e **JavaScript ES6+**: Para estrutura, estilização responsiva e lógica de aplicação.
 * **Leaflet.js (v1.9.4)**: Biblioteca de mapas interativos de alta performance.
+* **shpjs & toGeoJSON**: Leitura e conversão client-side de Shapefiles (.zip), KML e GeoJSON no navegador.
 * **Leaflet.VectorGrid**: Renderização de camadas vetoriais pesadas (Massa d'Água) via Vector Tiles (Protobuf PBF).
 * **Sortable.js**: Reordenação intuitiva de camadas por *drag-and-drop*.
 * **Lucide Icons**: Iconografia moderna e legível.
