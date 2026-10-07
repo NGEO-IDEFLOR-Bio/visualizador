@@ -183,10 +183,10 @@
       </button>
 
       <!-- About App Button -->
-      <button id="aboutAppBtn" class="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 px-3.5 rounded-xl text-xs shadow-lg shadow-emerald-950/40 transition">
+      <a href="documentacao.html" target="_blank" id="aboutAppBtn" class="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 px-3.5 rounded-xl text-xs shadow-lg shadow-emerald-950/40 transition">
         <i data-lucide="info" class="w-4 h-4"></i>
         <span class="hidden sm:inline">Sobre o App</span>
-      </button>
+      </a>
     </div>
   </header>
 
@@ -1335,14 +1335,6 @@
       document.getElementById('themeToggleBtn').onclick = () => {
         document.documentElement.classList.toggle('dark');
         document.documentElement.classList.toggle('light');
-      };
-
-      // About Modal
-      document.getElementById('aboutAppBtn').onclick = () => {
-        document.getElementById('aboutAppModal').classList.add('show');
-      };
-      document.getElementById('closeModalBtn').onclick = () => {
-        document.getElementById('aboutAppModal').classList.remove('show');
       };
 
       // Mobile Sidebar Toggle
