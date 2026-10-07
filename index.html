@@ -412,41 +412,76 @@
     /* ---------- Estilos / Cores Institucionais ---------- */
     const getMassaDaguaStyle = () => ({ fillColor: '#78d4e9', color: '#78d4e9', weight: 1, opacity: 1, fillOpacity: layerOpacities['Massa d\'Água'] ?? 0.8 });
     const getMunicipiosStyle = () => ({ fillColor:'transparent', weight: 1.5, opacity: 0.8, color:'#94a3b8', dashArray:'4, 4', fillOpacity: 0 });
-    const getQuilombosEstaduaisStyle = () => ({ fillColor: '#74381e', color: '#000000', weight: 1, opacity: 1, fillOpacity: layerOpacities['Quilombos Estaduais'] ?? 0.7 });
-    const getQuilombosFederaisStyle = () => ({ fillColor: '#c37d64', color: '#000000', weight: 1, opacity: 1, fillOpacity: layerOpacities['Quilombos Federais'] ?? 0.7 });
-    const getTerrasIndigenasStyle = () => ({ fillColor: '#f4cd94', color: '#78350f', weight: 1, opacity: 1, fillOpacity: layerOpacities['Terras Indígenas'] ?? 0.75 });
-    const getUcsEstaduaisStyle = () => ({ fillColor: '#15803d', color: '#064e3b', weight: 1.2, opacity: 1, fillOpacity: layerOpacities['UCs Estaduais'] ?? 0.75 });
-    const getUcsFederaisStyle = () => ({ fillColor: '#65a30d', color: '#3f6212', weight: 1.2, opacity: 1, fillOpacity: layerOpacities['UCs Federais'] ?? 0.75 });
+    
+    const getQuilombosEstaduaisStyle = () => ({
+      fillColor: '#74381e',
+      color: isOutlineModeActive ? '#74381e' : '#000000',
+      weight: isOutlineModeActive ? 2.5 : 1,
+      opacity: 1,
+      fillOpacity: isOutlineModeActive ? 0 : (layerOpacities['Quilombos Estaduais'] ?? 0.7)
+    });
+    
+    const getQuilombosFederaisStyle = () => ({
+      fillColor: '#c37d64',
+      color: isOutlineModeActive ? '#c37d64' : '#000000',
+      weight: isOutlineModeActive ? 2.5 : 1,
+      opacity: 1,
+      fillOpacity: isOutlineModeActive ? 0 : (layerOpacities['Quilombos Federais'] ?? 0.7)
+    });
+    
+    const getTerrasIndigenasStyle = () => ({
+      fillColor: '#f4cd94',
+      color: isOutlineModeActive ? '#f4cd94' : '#78350f',
+      weight: isOutlineModeActive ? 2.5 : 1,
+      opacity: 1,
+      fillOpacity: isOutlineModeActive ? 0 : (layerOpacities['Terras Indígenas'] ?? 0.75)
+    });
+    
+    const getUcsEstaduaisStyle = () => ({
+      fillColor: '#15803d',
+      color: isOutlineModeActive ? '#15803d' : '#064e3b',
+      weight: isOutlineModeActive ? 2.5 : 1.2,
+      opacity: 1,
+      fillOpacity: isOutlineModeActive ? 0 : (layerOpacities['UCs Estaduais'] ?? 0.75)
+    });
+    
+    const getUcsFederaisStyle = () => ({
+      fillColor: '#65a30d',
+      color: isOutlineModeActive ? '#65a30d' : '#3f6212',
+      weight: isOutlineModeActive ? 2.5 : 1.2,
+      opacity: 1,
+      fillOpacity: isOutlineModeActive ? 0 : (layerOpacities['UCs Federais'] ?? 0.75)
+    });
+    
     const getRegioesIntegracaoStyle = () => ({ fillColor:'transparent', weight: 2.5, opacity:0.9, color:'#b45309', fillOpacity: 0 });
 
     const getZoneamentosEstaduaisStyle = (feature) => {
       const zona = (feature?.properties?.ZONA || feature?.properties?.SIGLA || '').toLowerCase();
       let fillColor = '#6366f1'; // Indigo default
-      let color = '#4338ca';
 
       if (zona.includes('preserv') || zona.includes('nula') || zona.includes('intensa preserv')) {
-        fillColor = '#047857'; color = '#065f46';
+        fillColor = '#047857'; // Verde Escuro / Preservação
       } else if (zona.includes('conserv') || zona.includes('manejo')) {
-        fillColor = '#10b981'; color = '#047857';
+        fillColor = '#10b981'; // Verde Esmeralda / Conservação
       } else if (zona.includes('amorteciment')) {
-        fillColor = '#f59e0b'; color = '#b45309';
+        fillColor = '#f59e0b'; // Âmbar / Amortecimento
       } else if (zona.includes('moderad') || zona.includes('baixo impacto') || zona.includes('extensiv')) {
-        fillColor = '#84cc16'; color = '#4d7c0f';
+        fillColor = '#84cc16'; // Verde Lima / Uso Moderado
       } else if (zona.includes('intensiv') || zona.includes('populacion') || zona.includes('comunit') || zona.includes('morador')) {
-        fillColor = '#3b82f6'; color = '#1d4ed8';
+        fillColor = '#3b82f6'; // Azul / Uso Intensivo/Populacional
       } else if (zona.includes('produ') || zona.includes('alta') || zona.includes('conflit') || zona.includes('tempor')) {
-        fillColor = '#ef4444'; color = '#b91c1c';
+        fillColor = '#ef4444'; // Vermelho / Produção/Conflito/Alta Intervenção
       } else if (zona.includes('recupera') || zona.includes('degradad')) {
-        fillColor = '#d97706'; color = '#78350f';
+        fillColor = '#d97706'; // Marrom / Terracota / Recuperação
       } else if (zona.includes('hist') || zona.includes('cultur')) {
-        fillColor = '#a855f7'; color = '#7e22ce';
+        fillColor = '#a855f7'; // Roxo / Histórico-Cultural
       }
 
       const opacity = layerOpacities['Zoneamento UCs Estaduais'] ?? 0.75;
       if (isOutlineModeActive) {
         return { fillColor: 'transparent', color: fillColor, weight: 2.5, opacity: 1, fillOpacity: 0 };
       }
-      return { fillColor: fillColor, color: color, weight: 1, opacity: 0.9, fillOpacity: opacity };
+      return { fillColor: fillColor, color: fillColor, weight: 1, opacity: 0.9, fillOpacity: opacity };
     };
 
     const getMassaDaguaVectorStyle = () => ({ weight: 0.5, color: '#78d4e9', opacity: 1, fillColor: '#78d4e9', fillOpacity: layerOpacities['Massa d\'Água'] ?? 0.8 });
@@ -943,14 +978,7 @@
 
       Object.values(originalLayers).forEach(layerData => {
         if (layerData.leafletLayer && typeof layerData.leafletLayer.setStyle === 'function' && layerData.styleFunc) {
-          const originalStyle = layerData.styleFunc();
-          let newStyle;
-          if (isOutlineModeActive && originalStyle.fillColor && originalStyle.fillColor !== 'transparent') {
-            newStyle = { ...originalStyle, color: originalStyle.fillColor, fillOpacity: 0, weight: 3 };
-          } else {
-            newStyle = originalStyle;
-          }
-          layerData.leafletLayer.setStyle(newStyle);
+          layerData.leafletLayer.setStyle(layerData.styleFunc);
         }
       });
       updateLegend();
