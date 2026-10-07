@@ -484,6 +484,35 @@
       return { fillColor: fillColor, color: fillColor, weight: 1, opacity: 0.9, fillOpacity: opacity };
     };
 
+    const getCentroTreinamentoStyle = () => {
+      const opacity = layerOpacities['Centro de Treinamento Agroflorestal'] ?? 0.8;
+      return {
+        fillColor: '#06b6d4',
+        color: isOutlineModeActive ? '#06b6d4' : '#0e7490',
+        weight: isOutlineModeActive ? 2.5 : 1.5,
+        opacity: 1,
+        fillOpacity: isOutlineModeActive ? 0 : opacity
+      };
+    };
+
+    const getConcessoesFlorestaisStyle = () => {
+      const opacity = layerOpacities['Concessões Florestais (IDEFLOR-Bio)'] ?? 0.75;
+      const fillColor = '#16a34a';
+      if (isOutlineModeActive) {
+        return { fillColor: 'transparent', color: fillColor, weight: 2.5, opacity: 1, fillOpacity: 0 };
+      }
+      return { fillColor: fillColor, color: '#14532d', weight: 1.2, opacity: 0.9, fillOpacity: opacity };
+    };
+
+    const getContratosTransicaoStyle = () => {
+      const opacity = layerOpacities['Contratos de Transição (IDEFLOR-Bio)'] ?? 0.75;
+      const fillColor = '#ea580c';
+      if (isOutlineModeActive) {
+        return { fillColor: 'transparent', color: fillColor, weight: 2.5, opacity: 1, fillOpacity: 0 };
+      }
+      return { fillColor: fillColor, color: '#9a3412', weight: 1.2, opacity: 0.9, fillOpacity: opacity };
+    };
+
     const getMassaDaguaVectorStyle = () => ({ weight: 0.5, color: '#78d4e9', opacity: 1, fillColor: '#78d4e9', fillOpacity: layerOpacities['Massa d\'Água'] ?? 0.8 });
 
     /* ---------- Identify Inspector Side-Sheet & Filter ---------- */
@@ -729,6 +758,9 @@
         { name: 'Massa d\'Água', layerRef: originalLayers['Massa d\'Água']?.leafletLayer, color: '#78d4e9', type: 'polygon' },
         { name: 'Municípios', layerRef: originalLayers['Municípios']?.leafletLayer, color: '#94a3b8', type: 'dashed_line' },
         { name: 'Regiões de Integração', layerRef: originalLayers['Regiões de Integração']?.leafletLayer, color: '#b45309', type: 'line' },
+        { name: 'Centro de Treinamento Agroflorestal', layerRef: originalLayers['Centro de Treinamento Agroflorestal']?.leafletLayer, color: '#06b6d4', type: 'polygon' },
+        { name: 'Concessões Florestais (IDEFLOR-Bio)', layerRef: originalLayers['Concessões Florestais (IDEFLOR-Bio)']?.leafletLayer, color: '#16a34a', type: 'polygon' },
+        { name: 'Contratos de Transição (IDEFLOR-Bio)', layerRef: originalLayers['Contratos de Transição (IDEFLOR-Bio)']?.leafletLayer, color: '#ea580c', type: 'polygon' },
         { name: 'Zoneamento UCs Estaduais', layerRef: originalLayers['Zoneamento UCs Estaduais']?.leafletLayer, color: '#6366f1', type: 'polygon' },
         { name: 'UCs Estaduais', layerRef: originalLayers['UCs Estaduais']?.leafletLayer, color: '#15803d', type: 'polygon' },
         { name: 'Terras Indígenas', layerRef: originalLayers['Terras Indígenas']?.leafletLayer, color: '#f4cd94', type: 'polygon' },
@@ -905,6 +937,9 @@
       const sortableLayers = [
         "Municípios", 
         "Regiões de Integração",
+        "Centro de Treinamento Agroflorestal",
+        "Concessões Florestais (IDEFLOR-Bio)",
+        "Contratos de Transição (IDEFLOR-Bio)",
         "Zoneamento UCs Estaduais",
         "UCs Estaduais", 
         "Terras Indígenas", 
@@ -1108,7 +1143,11 @@
       L.control.zoom({ position: 'bottomleft' }).addTo(map);
 
       try {
-        const [municipiosRes, ucsEstaduaisRes, ucsFederaisRes, regioesRes, quilombosEstaduaisRes, quilombosFederaisRes, terrasIndigenasRes, zoneamentosRes] = await Promise.all([
+        const [
+          municipiosRes, ucsEstaduaisRes, ucsFederaisRes, regioesRes,
+          quilombosEstaduaisRes, quilombosFederaisRes, terrasIndigenasRes,
+          zoneamentosRes, centroTreinamentoRes, concessoesRes, contratosRes
+        ] = await Promise.all([
           fetch('data/municipios.geojson'),
           fetch('data/ucs_estaduais.geojson'),
           fetch('data/ucs_federais.geojson'),
@@ -1116,15 +1155,27 @@
           fetch('data/quilombos_estaduais.geojson'),
           fetch('data/quilombos_federais.geojson'),
           fetch('data/terras_indigenas.geojson'),
-          fetch('data/zoneamentos_ucs_estaduais.geojson')
+          fetch('data/zoneamentos_ucs_estaduais.geojson'),
+          fetch('data/centro_treinamento.geojson'),
+          fetch('data/concessoes_florestais_ideflor.geojson'),
+          fetch('data/contratos_de_transicao.geojson')
         ]);
 
-        const [municipiosData, ucsEstaduaisData, ucsFederaisData, regioesData, quilombosEstaduaisData, quilombosFederaisData, terrasIndigenasData, zoneamentosData] = await Promise.all([
-          municipiosRes.json(), ucsEstaduaisRes.json(), ucsFederaisRes.json(), regioesRes.json(), quilombosEstaduaisRes.json(), quilombosFederaisRes.json(), terrasIndigenasRes.json(), zoneamentosRes.json()
+        const [
+          municipiosData, ucsEstaduaisData, ucsFederaisData, regioesData,
+          quilombosEstaduaisData, quilombosFederaisData, terrasIndigenasData,
+          zoneamentosData, centroTreinamentoData, concessoesData, contratosData
+        ] = await Promise.all([
+          municipiosRes.json(), ucsEstaduaisRes.json(), ucsFederaisRes.json(), regioesRes.json(),
+          quilombosEstaduaisRes.json(), quilombosFederaisRes.json(), terrasIndigenasRes.json(),
+          zoneamentosRes.json(), centroTreinamentoRes.json(), concessoesRes.json(), contratosRes.json()
         ]);
 
         originalLayers['Municípios'] = { features: municipiosData.features, leafletLayer: L.geoJSON(municipiosData, { style: getMunicipiosStyle }), styleFunc: getMunicipiosStyle };
         originalLayers['Regiões de Integração'] = { features: regioesData.features, leafletLayer: L.geoJSON(regioesData, { style: getRegioesIntegracaoStyle }), styleFunc: getRegioesIntegracaoStyle };
+        originalLayers['Centro de Treinamento Agroflorestal'] = { features: centroTreinamentoData.features, leafletLayer: L.geoJSON(centroTreinamentoData, { style: getCentroTreinamentoStyle }), styleFunc: getCentroTreinamentoStyle };
+        originalLayers['Concessões Florestais (IDEFLOR-Bio)'] = { features: concessoesData.features, leafletLayer: L.geoJSON(concessoesData, { style: getConcessoesFlorestaisStyle }), styleFunc: getConcessoesFlorestaisStyle };
+        originalLayers['Contratos de Transição (IDEFLOR-Bio)'] = { features: contratosData.features, leafletLayer: L.geoJSON(contratosData, { style: getContratosTransicaoStyle }), styleFunc: getContratosTransicaoStyle };
         originalLayers['Zoneamento UCs Estaduais'] = { features: zoneamentosData.features, leafletLayer: L.geoJSON(zoneamentosData, { style: getZoneamentosEstaduaisStyle }), styleFunc: getZoneamentosEstaduaisStyle };
         originalLayers['UCs Estaduais'] = { features: ucsEstaduaisData.features, leafletLayer: L.geoJSON(ucsEstaduaisData, { style: getUcsEstaduaisStyle }), styleFunc: getUcsEstaduaisStyle };
         originalLayers['Terras Indígenas'] = { features: terrasIndigenasData.features, leafletLayer: L.geoJSON(terrasIndigenasData, { style: getTerrasIndigenasStyle }), styleFunc: getTerrasIndigenasStyle };
@@ -1145,6 +1196,9 @@
           "UCs Federais": originalLayers['UCs Federais'].leafletLayer,
           "Terras Indígenas": originalLayers['Terras Indígenas'].leafletLayer,
           "UCs Estaduais": originalLayers['UCs Estaduais'].leafletLayer,
+          "Contratos de Transição (IDEFLOR-Bio)": originalLayers['Contratos de Transição (IDEFLOR-Bio)'].leafletLayer,
+          "Concessões Florestais (IDEFLOR-Bio)": originalLayers['Concessões Florestais (IDEFLOR-Bio)'].leafletLayer,
+          "Centro de Treinamento Agroflorestal": originalLayers['Centro de Treinamento Agroflorestal'].leafletLayer,
           "Zoneamento UCs Estaduais": originalLayers['Zoneamento UCs Estaduais'].leafletLayer,
           "Regiões de Integração": originalLayers['Regiões de Integração'].leafletLayer,
           "Municípios": originalLayers['Municípios'].leafletLayer,
@@ -1152,9 +1206,16 @@
 
         layerControlRef = L.control.layers(baseLayers, overlayLayers, { position: 'topright' }).addTo(map);
 
-        // Adiciona camadas iniciais ao mapa EXCETO Zoneamento UCs Estaduais (desligada por padrão)
+        // Adiciona camadas iniciais ao mapa EXCETO as desligadas por padrão
+        const offByDefault = [
+          'Zoneamento UCs Estaduais',
+          'Centro de Treinamento Agroflorestal',
+          'Concessões Florestais (IDEFLOR-Bio)',
+          'Contratos de Transição (IDEFLOR-Bio)'
+        ];
+
         Object.entries(originalLayers).forEach(([name, l]) => {
-          if (name !== 'Zoneamento UCs Estaduais') {
+          if (!offByDefault.includes(name)) {
             l.leafletLayer?.addTo(map);
           }
         });
