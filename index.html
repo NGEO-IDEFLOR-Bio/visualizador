@@ -14,9 +14,11 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   
-  <!-- VectorGrid & SortableJS -->
+  <!-- VectorGrid, SortableJS, shpjs & togeojson -->
   <script src="https://unpkg.com/leaflet.vectorgrid@1.3.0/dist/leaflet.vectorgrid.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+  <script src="https://unpkg.com/shpjs@latest/dist/shp.js"></script>
+  <script src="https://unpkg.com/@tmcw/togeojson@5.8.1/dist/togeojson.umd.js"></script>
 
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -286,6 +288,15 @@
             <i data-lucide="maximize" class="w-4 h-4 text-cyan-400 group-hover:scale-110 transition"></i>
             <span class="text-xs font-semibold">Visão Geral</span>
           </button>
+
+          <div class="h-4 w-px bg-slate-700"></div>
+
+          <!-- Upload Custom Vector Tool -->
+          <button id="uploadVectorBtn" class="bg-slate-800/80 hover:bg-slate-700 text-slate-200 py-1.5 px-3 rounded-xl transition flex items-center gap-2 group" title="Carregar Vetor (.zip / Shapefile, .kml, .geojson)">
+            <i data-lucide="upload-cloud" class="w-4 h-4 text-purple-400 group-hover:scale-110 transition"></i>
+            <span class="text-xs font-semibold">Subir Arquivo</span>
+          </button>
+          <input type="file" id="vectorFileInput" accept=".zip,.kml,.geojson,.json,.shp" class="hidden" />
         </div>
 
         <!-- IDENTIFY LAYER SELECTION POPOVER -->
@@ -352,6 +363,7 @@
     let layerOpacities = {};
     let activeLayerName;
     let legendControl;
+    let layerControlRef;
     let currentFilteredFC = null;
     let identifyActive = false;
     let isOutlineModeActive = false;
@@ -370,13 +382,32 @@
     const identifyBtn = document.getElementById('identifyBtn');
     const toggleOutlineBtn = document.getElementById('toggleOutlineBtn');
     const resetViewBtn = document.getElementById('resetViewBtn');
+    const uploadVectorBtn = document.getElementById('uploadVectorBtn');
+    const vectorFileInput = document.getElementById('vectorFileInput');
     const inspectorSideSheet = document.getElementById('inspectorSideSheet');
     const inspectorContent = document.getElementById('inspectorContent');
     const closeInspectorBtn = document.getElementById('closeInspectorBtn');
 
-    /* ---------- Utils ---------- */
+    /* ---------- Utils & Toast ---------- */
     const norm = v => (v === null || v === undefined) ? '' : String(v).trim();
     const uniq = arr => Array.from(new Set(arr));
+
+    function showNotification(msg, type = 'success') {
+      let toast = document.getElementById('toastNotification');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toastNotification';
+        toast.className = 'fixed bottom-5 left-1/2 -translate-x-1/2 z-50 glass-panel px-4 py-2.5 rounded-2xl border border-emerald-500/50 shadow-2xl text-xs font-semibold text-emerald-300 flex items-center gap-2 transition-all duration-300 transform opacity-0 pointer-events-none translate-y-4';
+        document.body.appendChild(toast);
+      }
+      toast.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}" class="w-4 h-4 text-emerald-400"></i><span>${msg}</span>`;
+      lucide.createIcons();
+      
+      toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+      }, 5000);
+    }
 
     /* ---------- Estilos / Cores Institucionais ---------- */
     const getMassaDaguaStyle = () => ({ fillColor: '#78d4e9', color: '#78d4e9', weight: 1, opacity: 1, fillOpacity: layerOpacities['Massa d\'Água'] ?? 0.8 });
@@ -387,6 +418,36 @@
     const getUcsEstaduaisStyle = () => ({ fillColor: '#15803d', color: '#064e3b', weight: 1.2, opacity: 1, fillOpacity: layerOpacities['UCs Estaduais'] ?? 0.75 });
     const getUcsFederaisStyle = () => ({ fillColor: '#65a30d', color: '#3f6212', weight: 1.2, opacity: 1, fillOpacity: layerOpacities['UCs Federais'] ?? 0.75 });
     const getRegioesIntegracaoStyle = () => ({ fillColor:'transparent', weight: 2.5, opacity:0.9, color:'#b45309', fillOpacity: 0 });
+
+    const getZoneamentosEstaduaisStyle = (feature) => {
+      const zona = (feature?.properties?.ZONA || feature?.properties?.SIGLA || '').toLowerCase();
+      let fillColor = '#6366f1'; // Indigo default
+      let color = '#4338ca';
+
+      if (zona.includes('preserv') || zona.includes('nula') || zona.includes('intensa preserv')) {
+        fillColor = '#047857'; color = '#065f46';
+      } else if (zona.includes('conserv') || zona.includes('manejo')) {
+        fillColor = '#10b981'; color = '#047857';
+      } else if (zona.includes('amorteciment')) {
+        fillColor = '#f59e0b'; color = '#b45309';
+      } else if (zona.includes('moderad') || zona.includes('baixo impacto') || zona.includes('extensiv')) {
+        fillColor = '#84cc16'; color = '#4d7c0f';
+      } else if (zona.includes('intensiv') || zona.includes('populacion') || zona.includes('comunit') || zona.includes('morador')) {
+        fillColor = '#3b82f6'; color = '#1d4ed8';
+      } else if (zona.includes('produ') || zona.includes('alta') || zona.includes('conflit') || zona.includes('tempor')) {
+        fillColor = '#ef4444'; color = '#b91c1c';
+      } else if (zona.includes('recupera') || zona.includes('degradad')) {
+        fillColor = '#d97706'; color = '#78350f';
+      } else if (zona.includes('hist') || zona.includes('cultur')) {
+        fillColor = '#a855f7'; color = '#7e22ce';
+      }
+
+      const opacity = layerOpacities['Zoneamento UCs Estaduais'] ?? 0.75;
+      if (isOutlineModeActive) {
+        return { fillColor: 'transparent', color: fillColor, weight: 2.5, opacity: 1, fillOpacity: 0 };
+      }
+      return { fillColor: fillColor, color: color, weight: 1, opacity: 0.9, fillOpacity: opacity };
+    };
 
     const getMassaDaguaVectorStyle = () => ({ weight: 0.5, color: '#78d4e9', opacity: 1, fillColor: '#78d4e9', fillOpacity: layerOpacities['Massa d\'Água'] ?? 0.8 });
 
@@ -417,10 +478,73 @@
       }
     }
 
+    /* ---------- Algoritmo de Interseção Ponto-em-Polígono (Ray-Casting) ---------- */
+    function isPointInRing(lng, lat, ring) {
+      let inside = false;
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const xi = ring[i][0], yi = ring[i][1];
+        const xj = ring[j][0], yj = ring[j][1];
+        const intersect = ((yi > lat) !== (yj > lat)) &&
+          (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+
+    function isPointInGeometry(latlng, geometry) {
+      if (!geometry || !geometry.coordinates) return false;
+      const lng = latlng.lng;
+      const lat = latlng.lat;
+      const type = geometry.type;
+
+      if (type === 'Polygon') {
+        const rings = geometry.coordinates;
+        if (!isPointInRing(lng, lat, rings[0])) return false;
+        for (let i = 1; i < rings.length; i++) {
+          if (isPointInRing(lng, lat, rings[i])) return false;
+        }
+        return true;
+      }
+
+      if (type === 'MultiPolygon') {
+        for (const polygon of geometry.coordinates) {
+          if (isPointInRing(lng, lat, polygon[0])) {
+            let inHole = false;
+            for (let i = 1; i < polygon.length; i++) {
+              if (isPointInRing(lng, lat, polygon[i])) {
+                inHole = true;
+                break;
+              }
+            }
+            if (!inHole) return true;
+          }
+        }
+        return false;
+      }
+
+      if (type === 'Point') {
+        const dx = geometry.coordinates[0] - lng;
+        const dy = geometry.coordinates[1] - lat;
+        return (dx * dx + dy * dy) < 0.0001;
+      }
+
+      if (type === 'MultiPoint') {
+        for (const pt of geometry.coordinates) {
+          const dx = pt[0] - lng;
+          const dy = pt[1] - lat;
+          if ((dx * dx + dy * dy) < 0.0001) return true;
+        }
+        return false;
+      }
+
+      return false;
+    }
+
     function showPopupForLayers(e) {
       if (!identifyActive) return;
 
       let foundFeatures = [];
+      const featureKeys = new Set();
       const layersToCheck = Object.keys(originalLayers);
 
       layersToCheck.forEach(layerName => {
@@ -435,11 +559,17 @@
           const layerGroup = layerData.leafletLayer;
           if (layerGroup.eachLayer) {
             layerGroup.eachLayer(layer => {
-              if (layer.getBounds && layer.getBounds().contains(e.latlng)) {
-                foundFeatures.push({
-                  layerName: layerName,
-                  properties: layer.feature.properties
-                });
+              if (layer.feature && layer.feature.geometry) {
+                if (isPointInGeometry(e.latlng, layer.feature.geometry)) {
+                  const featKey = `${layerName}::${JSON.stringify(layer.feature.properties)}`;
+                  if (!featureKeys.has(featKey)) {
+                    featureKeys.add(featKey);
+                    foundFeatures.push({
+                      layerName: layerName,
+                      properties: layer.feature.properties
+                    });
+                  }
+                }
               }
             });
           }
@@ -542,12 +672,20 @@
         { name: 'Massa d\'Água', layerRef: originalLayers['Massa d\'Água']?.leafletLayer, color: '#78d4e9', type: 'polygon' },
         { name: 'Municípios', layerRef: originalLayers['Municípios']?.leafletLayer, color: '#94a3b8', type: 'dashed_line' },
         { name: 'Regiões de Integração', layerRef: originalLayers['Regiões de Integração']?.leafletLayer, color: '#b45309', type: 'line' },
+        { name: 'Zoneamento UCs Estaduais', layerRef: originalLayers['Zoneamento UCs Estaduais']?.leafletLayer, color: '#6366f1', type: 'polygon' },
         { name: 'UCs Estaduais', layerRef: originalLayers['UCs Estaduais']?.leafletLayer, color: '#15803d', type: 'polygon' },
         { name: 'Terras Indígenas', layerRef: originalLayers['Terras Indígenas']?.leafletLayer, color: '#f4cd94', type: 'polygon' },
         { name: 'UCs Federais', layerRef: originalLayers['UCs Federais']?.leafletLayer, color: '#65a30d', type: 'polygon' },
         { name: 'Quilombos Estaduais', layerRef: originalLayers['Quilombos Estaduais']?.leafletLayer, color: '#74381e', type: 'polygon' },
         { name: 'Quilombos Federais', layerRef: originalLayers['Quilombos Federais']?.leafletLayer, color: '#c37d64', type: 'polygon' },
       ];
+
+      // Adiciona dinamicamente camadas carregadas pelo usuário à legenda
+      Object.keys(originalLayers).forEach(name => {
+        if (name.startsWith('Uploaded: ')) {
+          layers.push({ name: name.replace('Uploaded: ', 'Vetor: '), layerRef: originalLayers[name]?.leafletLayer, color: '#ec4899', type: 'polygon' });
+        }
+      });
 
       layers.forEach(l => {
         if (l.layerRef && map.hasLayer(l.layerRef)) {
@@ -710,12 +848,19 @@
       const sortableLayers = [
         "Municípios", 
         "Regiões de Integração",
+        "Zoneamento UCs Estaduais",
         "UCs Estaduais", 
         "Terras Indígenas", 
         "UCs Federais", 
         "Quilombos Estaduais", 
         "Quilombos Federais"
       ];
+
+      Object.keys(layers).forEach(k => {
+        if (k.startsWith('Uploaded: ') && !sortableLayers.includes(k)) {
+          sortableLayers.push(k);
+        }
+      });
 
       sortableLayers.forEach(layerName => {
         if (layers[layerName]) {
@@ -789,6 +934,103 @@
       updateLegend();
     }
 
+    /* ---------- Processador de Upload de Vetores (.zip, .kml, .geojson) ---------- */
+    async function handleVectorUpload(file) {
+      const fileName = file.name;
+      const ext = fileName.split('.').pop().toLowerCase();
+
+      try {
+        let geojsonData = null;
+
+        if (ext === 'geojson' || ext === 'json') {
+          const text = await file.text();
+          geojsonData = JSON.parse(text);
+        } else if (ext === 'kml') {
+          const text = await file.text();
+          const dom = new DOMParser().parseFromString(text, 'text/xml');
+          if (typeof toGeoJSON !== 'undefined' && toGeoJSON.kml) {
+            geojsonData = toGeoJSON.kml(dom);
+          } else {
+            throw new Error('Biblioteca toGeoJSON não disponível.');
+          }
+        } else if (ext === 'zip' || ext === 'shp') {
+          const buffer = await file.arrayBuffer();
+          if (typeof shp !== 'undefined') {
+            geojsonData = await shp(buffer);
+          } else {
+            throw new Error('Biblioteca shpjs não disponível.');
+          }
+        } else {
+          alert('Formato não suportado. Por favor, envie .geojson, .kml ou Shapefile (.zip).');
+          return;
+        }
+
+        if (!geojsonData) throw new Error('Não foi possível extrair dados geoespaciais.');
+
+        if (Array.isArray(geojsonData)) {
+          geojsonData = geojsonData[0];
+        }
+
+        const featureCount = geojsonData.features ? geojsonData.features.length : 0;
+        if (featureCount === 0) {
+          alert('O arquivo não contém nenhuma feição espacial válida.');
+          return;
+        }
+
+        const userLayerName = `Uploaded: ${fileName.replace(/\.[^/.]+$/, '')}`;
+        const userStyle = () => ({
+          fillColor: '#ec4899',
+          color: '#db2777',
+          weight: 2.5,
+          opacity: 1,
+          fillOpacity: isOutlineModeActive ? 0 : 0.45
+        });
+
+        const userLeafletLayer = L.geoJSON(geojsonData, {
+          style: userStyle,
+          onEachFeature: (feature, layer) => {
+            if (feature.properties) {
+              let popupContent = `<div class="font-heading font-bold text-pink-400 border-b border-slate-700 pb-1 mb-1 text-xs">Vetor Carregado (${fileName})</div><div class="max-h-40 overflow-y-auto text-[11px] space-y-0.5">`;
+              Object.entries(feature.properties).forEach(([k, v]) => {
+                popupContent += `<div><strong class="text-slate-400 font-mono text-[10px]">${k}:</strong> <span class="text-slate-200">${v}</span></div>`;
+              });
+              popupContent += `</div>`;
+              layer.bindPopup(popupContent);
+            }
+          }
+        });
+
+        userLeafletLayer.addTo(map);
+
+        if (userLeafletLayer.getBounds().isValid()) {
+          map.flyToBounds(userLeafletLayer.getBounds(), { padding: [40, 40], duration: 1.0 });
+        }
+
+        originalLayers[userLayerName] = {
+          features: geojsonData.features,
+          leafletLayer: userLeafletLayer,
+          styleFunc: userStyle
+        };
+
+        if (layerControlRef) {
+          layerControlRef.addOverlay(userLeafletLayer, userLayerName);
+        }
+
+        const filterableLayers = { ...originalLayers };
+        delete filterableLayers['Massa d\'Água'];
+        populateLayerSelect(filterableLayers);
+        populateLayerOrderList(originalLayers);
+        renderIdentifyCheckboxes();
+        updateLegend();
+
+        showNotification(`Vetor "${fileName}" carregado no mapa! (${featureCount} feição(ões))`, 'success');
+
+      } catch (err) {
+        console.error('Erro no upload de vetor:', err);
+        alert(`Erro ao processar "${fileName}": ${err.message}`);
+      }
+    }
+
     /* ---------- Boot Application ---------- */
     window.onload = async function () {
       lucide.createIcons();
@@ -816,22 +1058,24 @@
       L.control.zoom({ position: 'bottomleft' }).addTo(map);
 
       try {
-        const [municipiosRes, ucsEstaduaisRes, ucsFederaisRes, regioesRes, quilombosEstaduaisRes, quilombosFederaisRes, terrasIndigenasRes] = await Promise.all([
+        const [municipiosRes, ucsEstaduaisRes, ucsFederaisRes, regioesRes, quilombosEstaduaisRes, quilombosFederaisRes, terrasIndigenasRes, zoneamentosRes] = await Promise.all([
           fetch('data/municipios.geojson'),
           fetch('data/ucs_estaduais.geojson'),
           fetch('data/ucs_federais.geojson'),
           fetch('data/regioes_integracao.geojson'),
           fetch('data/quilombos_estaduais.geojson'),
           fetch('data/quilombos_federais.geojson'),
-          fetch('data/terras_indigenas.geojson')
+          fetch('data/terras_indigenas.geojson'),
+          fetch('data/zoneamentos_ucs_estaduais.geojson')
         ]);
 
-        const [municipiosData, ucsEstaduaisData, ucsFederaisData, regioesData, quilombosEstaduaisData, quilombosFederaisData, terrasIndigenasData] = await Promise.all([
-          municipiosRes.json(), ucsEstaduaisRes.json(), ucsFederaisRes.json(), regioesRes.json(), quilombosEstaduaisRes.json(), quilombosFederaisRes.json(), terrasIndigenasRes.json()
+        const [municipiosData, ucsEstaduaisData, ucsFederaisData, regioesData, quilombosEstaduaisData, quilombosFederaisData, terrasIndigenasData, zoneamentosData] = await Promise.all([
+          municipiosRes.json(), ucsEstaduaisRes.json(), ucsFederaisRes.json(), regioesRes.json(), quilombosEstaduaisRes.json(), quilombosFederaisRes.json(), terrasIndigenasRes.json(), zoneamentosRes.json()
         ]);
 
         originalLayers['Municípios'] = { features: municipiosData.features, leafletLayer: L.geoJSON(municipiosData, { style: getMunicipiosStyle }), styleFunc: getMunicipiosStyle };
         originalLayers['Regiões de Integração'] = { features: regioesData.features, leafletLayer: L.geoJSON(regioesData, { style: getRegioesIntegracaoStyle }), styleFunc: getRegioesIntegracaoStyle };
+        originalLayers['Zoneamento UCs Estaduais'] = { features: zoneamentosData.features, leafletLayer: L.geoJSON(zoneamentosData, { style: getZoneamentosEstaduaisStyle }), styleFunc: getZoneamentosEstaduaisStyle };
         originalLayers['UCs Estaduais'] = { features: ucsEstaduaisData.features, leafletLayer: L.geoJSON(ucsEstaduaisData, { style: getUcsEstaduaisStyle }), styleFunc: getUcsEstaduaisStyle };
         originalLayers['Terras Indígenas'] = { features: terrasIndigenasData.features, leafletLayer: L.geoJSON(terrasIndigenasData, { style: getTerrasIndigenasStyle }), styleFunc: getTerrasIndigenasStyle };
         originalLayers['UCs Federais'] = { features: ucsFederaisData.features, leafletLayer: L.geoJSON(ucsFederaisData, { style: getUcsFederaisStyle }), styleFunc: getUcsFederaisStyle };
@@ -851,13 +1095,19 @@
           "UCs Federais": originalLayers['UCs Federais'].leafletLayer,
           "Terras Indígenas": originalLayers['Terras Indígenas'].leafletLayer,
           "UCs Estaduais": originalLayers['UCs Estaduais'].leafletLayer,
+          "Zoneamento UCs Estaduais": originalLayers['Zoneamento UCs Estaduais'].leafletLayer,
           "Regiões de Integração": originalLayers['Regiões de Integração'].leafletLayer,
           "Municípios": originalLayers['Municípios'].leafletLayer,
         };
 
-        L.control.layers(baseLayers, overlayLayers, { position: 'topright' }).addTo(map);
+        layerControlRef = L.control.layers(baseLayers, overlayLayers, { position: 'topright' }).addTo(map);
 
-        Object.values(originalLayers).forEach(l => l.leafletLayer?.addTo(map));
+        // Adiciona camadas iniciais ao mapa EXCETO Zoneamento UCs Estaduais (desligada por padrão)
+        Object.entries(originalLayers).forEach(([name, l]) => {
+          if (name !== 'Zoneamento UCs Estaduais') {
+            l.leafletLayer?.addTo(map);
+          }
+        });
 
         createLegend();
         map.on('overlayadd overlayremove baselayerchange layeradd layerremove', updateLegend);
@@ -922,6 +1172,16 @@
 
       resetViewBtn.onclick = () => {
         if (originalMapBounds) map.flyToBounds(originalMapBounds);
+      };
+
+      /* ---------- Upload de Arquivos Vetoriais ---------- */
+      uploadVectorBtn.onclick = () => vectorFileInput.click();
+
+      vectorFileInput.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        await handleVectorUpload(file);
+        vectorFileInput.value = '';
       };
 
       layerSel.onchange = () => {

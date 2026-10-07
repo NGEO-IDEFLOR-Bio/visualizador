@@ -136,7 +136,28 @@
             <!-- Card 6 -->
             <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3">
                 <h3 class="font-heading font-bold text-lg text-emerald-400 flex items-center gap-2">
-                    <i class="fa-solid fa-[#10b981] fa-list"></i> Legenda Dinâmica e Temas (Dark / Light)
+                    <i class="fa-solid fa-cloud-arrow-up text-purple-400"></i> Carregar Vetor Próprio (Shapefile .zip, KML, GeoJSON)
+                </h3>
+                <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                    Com a nova ferramenta <strong>Subir Arquivo</strong> na barra flutuante, os usuários podem carregar localmente no navegador seus próprios arquivos geoespaciais em formato <strong>Shapefile (em .zip)</strong>, <strong>KML</strong> ou <strong>GeoJSON</strong>. O processamento ocorre 100% no lado do cliente (sem necessidade de servidor backend), sendo perfeitamente compatível com hospedagens estáticas como o <strong>GitHub Pages</strong>. O mapa realiza enquadramento automático (*flyToBounds*) na área carregada e insere o vetor na legenda, identificador e lista de reordenação.
+                </p>
+                <img src="demo/subir_arquivo.png" alt="Ferramenta Subir Arquivo Vetorial" class="rounded-xl shadow-lg border border-slate-800 w-full" />
+            </div>
+
+            <!-- Card 7 -->
+            <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3">
+                <h3 class="font-heading font-bold text-lg text-emerald-400 flex items-center gap-2">
+                    <i class="fa-solid fa-draw-polygon text-indigo-400"></i> Zoneamento das UCs Estaduais
+                </h3>
+                <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                    Camada detalhada com os zoneamentos do Plano de Manejo das Unidades de Conservação Estaduais do Pará. Por padrão, a camada é disponibilizada <strong>desligada na inicialização</strong> para manter a agilidade da aplicação, podendo ser ativada a qualquer momento pelo Seletor de Camadas. A simbologia é categorizada dinamicamente (Zona de Preservação, Conservação, Amortecimento, Uso Moderado, Uso Intensivo, Produção e Recuperação), respeitando tanto o modo preenchido quanto o modo contorno.
+                </p>
+            </div>
+
+            <!-- Card 8 -->
+            <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3">
+                <h3 class="font-heading font-bold text-lg text-emerald-400 flex items-center gap-2">
+                    <i class="fa-solid fa-list"></i> Legenda Dinâmica e Temas (Dark / Light)
                 </h3>
                 <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
                     Legenda situada no canto inferior direito que reflete em tempo real as cores, linhas e estilos das camadas ativas. O aplicativo conta com alternador completo para Modo Escuro Esmeralda e Modo Claro Orgânico.
@@ -189,6 +210,13 @@
                     <div>
                         <span class="font-bold text-slate-200 block">CARTO Voyager API</span>
                         <span class="text-slate-400">Chave de API ativa integrada.</span>
+                    </div>
+                </div>
+                <div class="glass-panel p-4 rounded-xl flex items-center space-x-3 border border-slate-800">
+                    <i class="fa-solid fa-file-import text-purple-400 text-xl"></i>
+                    <div>
+                        <span class="font-bold text-slate-200 block">shpjs & toGeoJSON</span>
+                        <span class="text-slate-400">Leitura client-side de Shapefile (.zip), KML e GeoJSON.</span>
                     </div>
                 </div>
             </div>
