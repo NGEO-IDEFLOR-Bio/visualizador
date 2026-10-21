@@ -5,10 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Documentação — Visualizador Geoespacial IDEFLOR-Bio</title>
 
-    <!-- Typography: Plus Jakarta Sans & Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Typography: Rawline (Gov.br DS) -->
+    <link rel="preload" href="assets/fonts/rawline/rawline-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="assets/fonts/rawline/rawline-700.woff2" as="font" type="font/woff2" crossorigin>
 
     <!-- FontAwesome & Lucide Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -22,8 +21,32 @@
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-              heading: ['Plus Jakarta Sans', 'sans-serif'],
+              sans: ['Rawline', 'Inter', 'sans-serif'],
+              heading: ['Rawline', 'Plus Jakarta Sans', 'sans-serif'],
+            },
+            colors: {
+              gov: {
+                50: '#edf5ff',
+                100: '#d4e5ff',
+                200: '#adcdff',
+                300: '#81aefc',
+                400: '#5992ed',
+                500: '#2670e8',
+                600: '#1351b4',
+                700: '#0c326f',
+                800: '#274863',
+                900: '#0c326f',
+                950: '#071d41',
+              },
+              slate: {
+                400: '#a9aeb1',
+                500: '#8d9297',
+                600: '#71767a',
+                700: '#3d4551',
+                800: '#274863',
+                900: '#0c326f',
+                950: '#071d41',
+              }
             }
           }
         }
@@ -31,22 +54,57 @@
     </script>
 
     <style>
+        @font-face {
+            font-family: "Rawline";
+            src: url("assets/fonts/rawline/rawline-400.woff2") format("woff2");
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: "Rawline";
+            src: url("assets/fonts/rawline/rawline-500.woff2") format("woff2");
+            font-weight: 500;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: "Rawline";
+            src: url("assets/fonts/rawline/rawline-600.woff2") format("woff2");
+            font-weight: 600;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: "Rawline";
+            src: url("assets/fonts/rawline/rawline-700.woff2") format("woff2");
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: "Rawline";
+            src: url("assets/fonts/rawline/rawline-800.woff2") format("woff2");
+            font-weight: 800;
+            font-style: normal;
+            font-display: swap;
+        }
         .glass-panel {
-            background: rgba(15, 23, 42, 0.88);
+            background: rgba(7, 29, 65, 0.9);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(51, 65, 85, 0.6);
+            border: 1px solid rgba(39, 72, 99, 0.7);
         }
         .section-title {
-            border-left: 4px solid #10b981;
+            border-left: 4px solid #1351b4;
             padding-left: 1rem;
         }
     </style>
 </head>
-<body class="dark bg-slate-900 text-slate-100 font-sans antialiased p-4 sm:p-8">
+<body class="dark bg-slate-950 text-slate-100 font-sans antialiased p-4 sm:p-8">
 
     <!-- Back Button -->
-    <a href="index.html" class="fixed top-4 left-4 z-50 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-4 rounded-xl shadow-xl transition duration-300 flex items-center gap-2 text-xs font-heading">
+    <a href="index.html" class="fixed top-4 left-4 z-50 bg-gov-600 hover:bg-gov-500 text-white font-bold py-2.5 px-4 rounded-md shadow-xl transition duration-300 flex items-center gap-2 text-xs font-heading">
         <i class="fas fa-arrow-left"></i>
         <span>Voltar ao Mapa</span>
     </a>
@@ -56,7 +114,7 @@
         <header class="text-center space-y-4">
             <img src="logo_ngeo.png" alt="Logo NGEO IDEFLOR-Bio" class="h-20 mx-auto mb-2" />
             <h1 class="text-3xl sm:text-5xl font-heading font-extrabold text-white tracking-tight">Visualizador Geoespacial</h1>
-            <p class="text-base sm:text-lg text-emerald-400 font-medium">Documentação Oficial do Aplicativo WebGIS — IDEFLOR-Bio</p>
+            <p class="text-base sm:text-lg text-gov-400 font-medium">Documentação Oficial do Aplicativo WebGIS — IDEFLOR-Bio</p>
         </header>
 
         <!-- Visão Geral -->
@@ -65,10 +123,10 @@
             <p class="text-sm sm:text-base text-slate-300 leading-relaxed">
                 O <strong>Visualizador Geoespacial do IDEFLOR-Bio</strong> é uma plataforma de WebGIS desenvolvida para simplificar a visualização, cruzamento e análise espacial das Áreas Protegidas e Limites Territoriais do Estado do Pará. O portal reúne em um único ambiente interativo informações sobre Unidades de Conservação Estaduais e Federais, Terras Indígenas, Territórios Quilombolas, Regiões de Integração, Limites Municipais e Hidrografia.
             </p>
-            <div class="glass-panel p-5 rounded-2xl border border-slate-800 text-xs sm:text-sm text-slate-400 italic">
+            <div class="glass-panel p-5 rounded-lg border border-slate-800 text-xs sm:text-sm text-slate-400 italic">
                 A ferramenta tem como objetivo auxiliar técnicos, gestores públicos e pesquisadores na avaliação de sobreposições territoriais, suporte a reuniões institucionais e tomada de decisão fundamentada em dados geoespaciais oficiais.
             </div>
-            <img src="demo/inicial.png" alt="Interface Inicial do Aplicativo" class="mt-6 rounded-2xl shadow-2xl border border-slate-800 w-full" />
+            <img src="demo/inicial.png" alt="Interface Inicial do Aplicativo" class="mt-6 rounded-lg shadow-2xl border border-slate-800 w-full" />
         </section>
 
         <!-- Funcionalidades -->
@@ -76,77 +134,77 @@
             <h2 class="text-2xl sm:text-3xl font-heading font-bold text-white section-title">Funcionalidades Principais</h2>
 
             <!-- Card 1 -->
-            <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3">
-                <h3 class="font-heading font-bold text-lg text-emerald-400 flex items-center gap-2">
+            <div class="glass-panel p-6 rounded-lg border border-slate-800 space-y-3">
+                <h3 class="font-heading font-bold text-lg text-gov-400 flex items-center gap-2">
                     <i class="fa-solid fa-layer-group"></i> Seletor de Camadas & Controle de Opacidade
                 </h3>
                 <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
                     Permite ativar ou desativar individualmente cada camada de informação geográfica do Estado do Pará. Cada camada possui um slider de transparência ajustável (0% a 100%), permitindo sobrepor imagens de satélite e analisar contornos inferiores com precisão.
                 </p>
-                <img src="demo/seletor_camadas.png" alt="Seletor de Camadas e Opacidade" class="rounded-xl shadow-lg border border-slate-800 w-full" />
+                <img src="demo/seletor_camadas.png" alt="Seletor de Camadas e Opacidade" class="rounded-md shadow-lg border border-slate-800 w-full" />
             </div>
 
             <!-- Card 2 -->
-            <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3">
-                <h3 class="font-heading font-bold text-lg text-emerald-400 flex items-center gap-2">
+            <div class="glass-panel p-6 rounded-lg border border-slate-800 space-y-3">
+                <h3 class="font-heading font-bold text-lg text-gov-400 flex items-center gap-2">
                     <i class="fa-solid fa-arrows-up-down"></i> Reordenação Interativa (Drag-and-Drop)
                 </h3>
                 <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
                     O painel de camadas possui suporte a reordenação por *drag-and-drop* (baseado em Sortable.js). Arraste qualquer camada para cima ou para baixo para alterar a ordem de renderização no mapa e definir qual polígono se sobrepõe aos demais.
                 </p>
-                <img src="demo/ordenar_camadas.png" alt="Reordenação de Camadas" class="rounded-xl shadow-lg border border-slate-800 w-full" />
+                <img src="demo/ordenar_camadas.png" alt="Reordenação de Camadas" class="rounded-md shadow-lg border border-slate-800 w-full" />
             </div>
 
             <!-- Card 3 -->
-            <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3">
-                <h3 class="font-heading font-bold text-lg text-emerald-400 flex items-center gap-2">
+            <div class="glass-panel p-6 rounded-lg border border-slate-800 space-y-3">
+                <h3 class="font-heading font-bold text-lg text-gov-400 flex items-center gap-2">
                     <i class="fa-solid fa-filter"></i> Filtro por Atributos & Download GeoJSON
                 </h3>
                 <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
                     Permite filtrar feições de forma precisa escolhendo a Camada, Coluna e Valor específico. O sistema contabiliza automaticamente a quantidade de itens encontrados e ativa o botão de download direto em formato **GeoJSON**. Ao filtrar por Município ou Região de Integração, o mapa calcula automaticamente todas as UCs, Terras Indígenas e Quilombos sobrepostos naquele território.
                 </p>
                 <div class="grid md:grid-cols-2 gap-4">
-                    <img src="demo/filtro.png" alt="Filtro de Atributos" class="rounded-xl shadow-lg border border-slate-800 w-full" />
-                    <img src="demo/download.png" alt="Download de Dados" class="rounded-xl shadow-lg border border-slate-800 w-full" />
+                    <img src="demo/filtro.png" alt="Filtro de Atributos" class="rounded-md shadow-lg border border-slate-800 w-full" />
+                    <img src="demo/download.png" alt="Download de Dados" class="rounded-md shadow-lg border border-slate-800 w-full" />
                 </div>
             </div>
 
             <!-- Card 4 -->
-            <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3">
-                <h3 class="font-heading font-bold text-lg text-emerald-400 flex items-center gap-2">
+            <div class="glass-panel p-6 rounded-lg border border-slate-800 space-y-3">
+                <h3 class="font-heading font-bold text-lg text-gov-400 flex items-center gap-2">
                     <i class="fa-solid fa-location-crosshairs"></i> Ferramenta de Identificação (`Identify`) com Balão Ancorado
                 </h3>
                 <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
                     Ao ativar a ferramenta de identificação e clicar em qualquer ponto do mapa, um **Balão Popup ancorado** (`z-index: 99999`) exibe instantaneamente a tabela de atributos de todas as feições visíveis naquele ponto. A ferramenta possui um menu de seleção rápida para escolher exatamente quais camadas devem ser consultadas.
                 </p>
-                <img src="demo/identificador.png" alt="Ferramenta de Identificação" class="rounded-xl shadow-lg border border-slate-800 w-full" />
+                <img src="demo/identificador.png" alt="Ferramenta de Identificação" class="rounded-md shadow-lg border border-slate-800 w-full" />
             </div>
 
             <!-- Card 5 -->
-            <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3">
-                <h3 class="font-heading font-bold text-lg text-emerald-400 flex items-center gap-2">
+            <div class="glass-panel p-6 rounded-lg border border-slate-800 space-y-3">
+                <h3 class="font-heading font-bold text-lg text-gov-400 flex items-center gap-2">
                     <i class="fa-solid fa-square"></i> Modo Contorno (Outline)
                 </h3>
                 <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
                     Ao acionar o botão 'Modo Contorno', todas as camadas de polígono removem seu preenchimento opaco e passam a exibir linhas de contorno vazado mais espessas com as cores originais da camada. Essa função é ideal para análise de limite sobre imagens de satélite.
                 </p>
-                <img src="demo/modo_outline.png" alt="Modo Contorno" class="rounded-xl shadow-lg border border-slate-800 w-full" />
+                <img src="demo/modo_outline.png" alt="Modo Contorno" class="rounded-md shadow-lg border border-slate-800 w-full" />
             </div>
 
             <!-- Card 6 -->
-            <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3">
-                <h3 class="font-heading font-bold text-lg text-emerald-400 flex items-center gap-2">
+            <div class="glass-panel p-6 rounded-lg border border-slate-800 space-y-3">
+                <h3 class="font-heading font-bold text-lg text-gov-400 flex items-center gap-2">
                     <i class="fa-solid fa-cloud-arrow-up text-purple-400"></i> Carregar Vetor Próprio (Shapefile .zip, KML, GeoJSON)
                 </h3>
                 <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
                     Com a nova ferramenta <strong>Subir Arquivo</strong> na barra flutuante, os usuários podem carregar localmente no navegador seus próprios arquivos geoespaciais em formato <strong>Shapefile (em .zip)</strong>, <strong>KML</strong> ou <strong>GeoJSON</strong>. O processamento ocorre 100% no lado do cliente (sem necessidade de servidor backend), sendo perfeitamente compatível com hospedagens estáticas como o <strong>GitHub Pages</strong>. O mapa realiza enquadramento automático (*flyToBounds*) na área carregada e insere o vetor na legenda, identificador e lista de reordenação.
                 </p>
-                <img src="demo/subir_arquivo.png" alt="Ferramenta Subir Arquivo Vetorial" class="rounded-xl shadow-lg border border-slate-800 w-full" />
+                <img src="demo/subir_arquivo.png" alt="Ferramenta Subir Arquivo Vetorial" class="rounded-md shadow-lg border border-slate-800 w-full" />
             </div>
 
             <!-- Card 7 -->
-            <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3">
-                <h3 class="font-heading font-bold text-lg text-emerald-400 flex items-center gap-2">
+            <div class="glass-panel p-6 rounded-lg border border-slate-800 space-y-3">
+                <h3 class="font-heading font-bold text-lg text-gov-400 flex items-center gap-2">
                     <i class="fa-solid fa-draw-polygon text-indigo-400"></i> Zoneamento das UCs Estaduais
                 </h3>
                 <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
@@ -155,8 +213,8 @@
             </div>
 
             <!-- Card 8 -->
-            <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3">
-                <h3 class="font-heading font-bold text-lg text-emerald-400 flex items-center gap-2">
+            <div class="glass-panel p-6 rounded-lg border border-slate-800 space-y-3">
+                <h3 class="font-heading font-bold text-lg text-gov-400 flex items-center gap-2">
                     <i class="fa-solid fa-graduation-cap text-cyan-400"></i> Centro de Treinamento Agroflorestal (IDEFLOR-Bio)
                 </h3>
                 <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
@@ -165,9 +223,9 @@
             </div>
 
             <!-- Card 9 -->
-            <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3">
-                <h3 class="font-heading font-bold text-lg text-emerald-400 flex items-center gap-2">
-                    <i class="fa-solid fa-tree text-emerald-500"></i> Concessões Florestais (IDEFLOR-Bio)
+            <div class="glass-panel p-6 rounded-lg border border-slate-800 space-y-3">
+                <h3 class="font-heading font-bold text-lg text-gov-400 flex items-center gap-2">
+                    <i class="fa-solid fa-tree text-gov-500"></i> Concessões Florestais (IDEFLOR-Bio)
                 </h3>
                 <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
                     Polígonos das Unidades de Manejo Florestal (UMFs) sob concessão florestal pública estadual no Pará. Apresenta dados detalhados como processo, empresa concessionária, município e estágio de demarcação. Carregada <strong>desligada por padrão</strong> para otimizar o desempenho inicial.
@@ -175,8 +233,8 @@
             </div>
 
             <!-- Card 10 -->
-            <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3">
-                <h3 class="font-heading font-bold text-lg text-emerald-400 flex items-center gap-2">
+            <div class="glass-panel p-6 rounded-lg border border-slate-800 space-y-3">
+                <h3 class="font-heading font-bold text-lg text-gov-400 flex items-center gap-2">
                     <i class="fa-solid fa-file-signature text-amber-500"></i> Contratos de Transição (IDEFLOR-Bio)
                 </h3>
                 <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
@@ -185,14 +243,14 @@
             </div>
 
             <!-- Card 11 -->
-            <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3">
-                <h3 class="font-heading font-bold text-lg text-emerald-400 flex items-center gap-2">
+            <div class="glass-panel p-6 rounded-lg border border-slate-800 space-y-3">
+                <h3 class="font-heading font-bold text-lg text-gov-400 flex items-center gap-2">
                     <i class="fa-solid fa-list"></i> Legenda Dinâmica e Temas (Dark / Light)
                 </h3>
                 <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
                     Legenda situada no canto inferior direito que reflete em tempo real as cores, linhas e estilos das camadas ativas. O aplicativo conta com alternador completo para Modo Escuro Esmeralda e Modo Claro Orgânico.
                 </p>
-                <img src="demo/legenda.png" alt="Legenda Dinâmica" class="rounded-xl shadow-lg border border-slate-800 w-full" />
+                <img src="demo/legenda.png" alt="Legenda Dinâmica" class="rounded-md shadow-lg border border-slate-800 w-full" />
             </div>
         </section>
         
@@ -200,49 +258,49 @@
         <section id="tecnologias" class="space-y-4">
             <h2 class="text-2xl sm:text-3xl font-heading font-bold text-white section-title">Tecnologias Utilizadas</h2>
             <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
-                <div class="glass-panel p-4 rounded-xl flex items-center space-x-3 border border-slate-800">
-                    <i class="fa-solid fa-code text-emerald-400 text-xl"></i>
+                <div class="glass-panel p-4 rounded-md flex items-center space-x-3 border border-slate-800">
+                    <i class="fa-solid fa-code text-gov-400 text-xl"></i>
                     <div>
                         <span class="font-bold text-slate-200 block">HTML5, CSS3 & JS ES6+</span>
                         <span class="text-slate-400">Estrutura e interatividade.</span>
                     </div>
                 </div>
-                <div class="glass-panel p-4 rounded-xl flex items-center space-x-3 border border-slate-800">
-                    <i class="fa-solid fa-map text-emerald-400 text-xl"></i>
+                <div class="glass-panel p-4 rounded-md flex items-center space-x-3 border border-slate-800">
+                    <i class="fa-solid fa-map text-gov-400 text-xl"></i>
                     <div>
                         <span class="font-bold text-slate-200 block">Leaflet.js (v1.9.4)</span>
                         <span class="text-slate-400">Motor de mapas interativos.</span>
                     </div>
                 </div>
-                <div class="glass-panel p-4 rounded-xl flex items-center space-x-3 border border-slate-800">
+                <div class="glass-panel p-4 rounded-md flex items-center space-x-3 border border-slate-800">
                     <i class="fa-solid fa-bolt text-amber-400 text-xl"></i>
                     <div>
                         <span class="font-bold text-slate-200 block">Vector Tiles & VectorGrid</span>
                         <span class="text-slate-400">Camada otimizada de Massa d'Água.</span>
                     </div>
                 </div>
-                <div class="glass-panel p-4 rounded-xl flex items-center space-x-3 border border-slate-800">
+                <div class="glass-panel p-4 rounded-md flex items-center space-x-3 border border-slate-800">
                     <i class="fa-solid fa-up-down-left-right text-cyan-400 text-xl"></i>
                     <div>
                         <span class="font-bold text-slate-200 block">Sortable.js</span>
                         <span class="text-slate-400">Reordenação por drag-and-drop.</span>
                     </div>
                 </div>
-                <div class="glass-panel p-4 rounded-xl flex items-center space-x-3 border border-slate-800">
-                    <i class="fa-solid fa-paintbrush text-emerald-400 text-xl"></i>
+                <div class="glass-panel p-4 rounded-md flex items-center space-x-3 border border-slate-800">
+                    <i class="fa-solid fa-paintbrush text-gov-400 text-xl"></i>
                     <div>
                         <span class="font-bold text-slate-200 block">Tailwind CSS v3</span>
                         <span class="text-slate-400">Estilização responsiva.</span>
                     </div>
                 </div>
-                <div class="glass-panel p-4 rounded-xl flex items-center space-x-3 border border-slate-800">
+                <div class="glass-panel p-4 rounded-md flex items-center space-x-3 border border-slate-800">
                     <i class="fa-solid fa-key text-amber-400 text-xl"></i>
                     <div>
                         <span class="font-bold text-slate-200 block">CARTO Voyager API</span>
                         <span class="text-slate-400">Chave de API ativa integrada.</span>
                     </div>
                 </div>
-                <div class="glass-panel p-4 rounded-xl flex items-center space-x-3 border border-slate-800">
+                <div class="glass-panel p-4 rounded-md flex items-center space-x-3 border border-slate-800">
                     <i class="fa-solid fa-file-import text-purple-400 text-xl"></i>
                     <div>
                         <span class="font-bold text-slate-200 block">shpjs & toGeoJSON</span>
@@ -259,13 +317,13 @@
                 Desenvolvido por <strong>Samuel C. Santos</strong>, Coordenador do Núcleo de Geotecnologias (NGEO) do IDEFLOR-Bio. Para maiores detalhes sobre o portfólio e projetos correlatos:
             </p>
             <div class="flex justify-center space-x-6 pt-2">
-                <a href="https://www.linkedin.com/in/samuelsantos-amb/" target="_blank" rel="noopener" class="text-emerald-400 hover:text-emerald-300 transition text-2xl">
+                <a href="https://www.linkedin.com/in/samuelsantos-amb/" target="_blank" rel="noopener" class="text-gov-400 hover:text-gov-300 transition text-2xl">
                     <i class="fab fa-linkedin"></i>
                 </a>
                 <a href="https://github.com/samuel-c-santos" target="_blank" rel="noopener" class="text-slate-300 hover:text-white transition text-2xl">
                     <i class="fab fa-github"></i>
                 </a>
-                <a href="https://samuel-c-santos.github.io/" target="_blank" rel="noopener" class="text-emerald-400 hover:text-emerald-300 transition text-2xl">
+                <a href="https://samuel-c-santos.github.io/" target="_blank" rel="noopener" class="text-gov-400 hover:text-gov-300 transition text-2xl">
                     <i class="fas fa-globe"></i>
                 </a>
             </div>
