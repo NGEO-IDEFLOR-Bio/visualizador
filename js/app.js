@@ -172,6 +172,8 @@ function loadScript(src) {
 /* ------------------------------------------------------------------ */
 /* Boot                                                                */
 /* ------------------------------------------------------------------ */
+let deferredInstallPrompt = null;
+
 boot();
 
 async function boot() {
@@ -183,6 +185,7 @@ async function boot() {
   $('#outlineToggle').checked = state.outline;
 
   bindUI();
+  setupPwa();
 
   try {
     const res = await fetch(MANIFEST_URL, { cache: 'no-cache' });
@@ -1510,6 +1513,49 @@ function bboxOf(fc) {
 /* ------------------------------------------------------------------ */
 /* Interface                                                           */
 /* ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ */
+/* PWA                                                                 */
+/* ------------------------------------------------------------------ */
+function setupPwa() {
+  const installBtn = $('#installBtn');
+  const iosHint = $('#iosInstallHint');
+  const standalone =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true;
+  const isIOS =
+    /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  if (isIOS && !standalone && iosHint) iosHint.hidden = false;
+  if (standalone && installBtn) installBtn.hidden = true;
+
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    if (installBtn && !standalone) installBtn.hidden = false;
+  });
+
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    if (installBtn) installBtn.hidden = true;
+    toast('Aplicativo instalado.');
+  });
+
+  if ('serviceWorker' in navigator) {
+    const secure =
+      location.protocol === 'https:' ||
+      location.hostname === 'localhost' ||
+      location.hostname === '127.0.0.1';
+    if (secure) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch((err) => {
+          console.warn('[pwa] service worker:', err);
+        });
+      }, { once: true });
+    }
+  }
+}
+
 function bindUI() {
   bindLayerList();
 
@@ -1544,6 +1590,13 @@ function bindUI() {
   updateBasemapMenu();
 
   $('#uploadBtn').addEventListener('click', () => $('#fileInput').click());
+  $('#installBtn').addEventListener('click', async () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    try { await deferredInstallPrompt.userChoice; } catch { /* cancelado */ }
+    deferredInstallPrompt = null;
+    $('#installBtn').hidden = true;
+  });
   $('#fileInput').addEventListener('change', async (e) => {
     const file = e.target.files?.[0];
     e.target.value = '';

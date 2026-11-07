@@ -3,10 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#1351b4" />
+  <meta name="theme-color" content="#0b5d3b" />
   <title>Visualizador Geoespacial · NGEO/IDEFLOR-Bio</title>
   <meta name="description" content="Consulta e análise das camadas geoespaciais do Pará: limites, unidades de conservação, terras indígenas, quilombos e dados do NGEO/IDEFLOR-Bio." />
   <link rel="icon" type="image/svg+xml" href="assets/brand-mark.svg" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="NGEO Mapas" />
 
   <link rel="preload" href="assets/fonts/rawline/rawline-400.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="assets/fonts/rawline/rawline-700.woff2" as="font" type="font/woff2" crossorigin />
@@ -184,8 +190,15 @@
         <li><strong>Filtro</strong> isola feições por atributo e permite baixar o recorte em GeoJSON.</li>
         <li><strong>Subir</strong> aceita GeoJSON, KML e Shapefile (.zip), processados no navegador.</li>
       </ul>
+      <button id="installBtn" class="btn primary install-btn" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4"/><path d="M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>
+        Instalar aplicativo
+      </button>
+      <p id="iosInstallHint" class="install-hint" hidden>
+        Para instalar no iPhone/iPad: toque em <strong>Compartilhar</strong> → <strong>Adicionar à Tela de Início</strong>.
+      </p>
       <div class="modal-actions">
-        <a class="btn primary" href="documentacao.html" target="_blank" rel="noopener">Documentação</a>
+        <a class="btn ghost" href="documentacao.html" target="_blank" rel="noopener">Documentação</a>
         <button id="aboutOk" class="btn ghost">Fechar</button>
       </div>
     </div>

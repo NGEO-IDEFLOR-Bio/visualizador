@@ -1,0 +1,78 @@
+{
+  "id": "./",
+  "name": "Visualizador Geoespacial NGEO/IDEFLOR-Bio",
+  "short_name": "NGEO Mapas",
+  "description": "Consulta e análise das camadas geoespaciais do Pará: limites, unidades de conservação, terras indígenas, quilombos e bases do NGEO/IDEFLOR-Bio.",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f4f7fb",
+  "theme_color": "#0b5d3b",
+  "categories": ["government", "maps", "utilities"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "assets/brand-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "demo/v2-inicial.png",
+      "sizes": "1440x900",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Mapa do Pará com o painel de camadas"
+    },
+    {
+      "src": "demo/v2-mobile.png",
+      "sizes": "780x1688",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Visualizador no celular"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Abrir o mapa",
+      "short_name": "Mapa",
+      "url": "./",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Documentação",
+      "short_name": "Ajuda",
+      "url": "documentacao.html",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

@@ -167,6 +167,7 @@
     </a>
     <nav>
       <a href="#como-usar">Como usar</a>
+      <a href="#instalar">Instalar</a>
       <a href="#camadas">Camadas</a>
       <a href="#dados">Dados</a>
       <a class="btn" href="index.html">Abrir o visualizador</a>
@@ -176,7 +177,7 @@
 
 <div class="hero">
   <div class="wrap">
-    <span class="tag">Versão 2 · MapLibre + PMTiles</span>
+    <span class="tag">Versão 2 · MapLibre + PMTiles + PWA</span>
     <h1>Território do Pará,<br />em uma consulta rápida.</h1>
     <p>
       O Visualizador Geoespacial do NGEO/IDEFLOR-Bio reúne limites estaduais, unidades de conservação,
@@ -262,6 +263,29 @@
     </div>
   </section>
 
+  <section id="instalar">
+    <h2>Instalar como aplicativo</h2>
+    <p class="lead">O visualizador é um PWA: pode ser instalado e aberto em janela própria, sem a barra do navegador.</p>
+    <div class="grid three">
+      <div class="card">
+        <h3>Chrome / Edge</h3>
+        <p>Use o ícone de instalação na barra de endereço ou o menu → <strong>Instalar aplicativo</strong>. O botão também aparece no <strong>ⓘ Sobre</strong> quando o navegador permite.</p>
+      </div>
+      <div class="card">
+        <h3>Android</h3>
+        <p>Menu do navegador → <strong>Instalar app</strong> ou <strong>Adicionar à tela inicial</strong>.</p>
+      </div>
+      <div class="card">
+        <h3>iPhone / iPad</h3>
+        <p>Toque em <strong>Compartilhar</strong> → <strong>Adicionar à Tela de Início</strong>. O Sobre mostra esse atalho automaticamente.</p>
+      </div>
+    </div>
+    <div class="note" style="margin-top:16px">
+      O app shell (interface, camadas, filtros e legenda) fica em cache para abrir rápido, inclusive sem conexão.
+      Os tiles do mapa e os downloads de GeoJSON continuam sob demanda e precisam de internet.
+    </div>
+  </section>
+
   <section>
     <h2>Na prática</h2>
     <p class="lead">Quatro situações de uso, direto da interface.</p>
@@ -342,6 +366,7 @@
       <li>Uploads valem para a sessão atual — recarregar a página remove os arquivos carregados.</li>
       <li>Campos com mais de 250 valores únicos (por exemplo, área) não são oferecidos no filtro.</li>
       <li>O app precisa ser servido por HTTP. Abrir o <code>index.html</code> direto do disco não funciona por causa dos módulos ES e do PMTiles.</li>
+      <li>O modo offline cobre o app shell. Os tiles do mapa são carregados sob demanda e precisam de conexão.</li>
     </ul>
   </section>
 
@@ -353,6 +378,7 @@
       <div class="card"><h3>Tippecanoe</h3><p class="muted">Geração dos tiles a partir dos GeoJSON, com simplificação e controle de zoom.</p></div>
       <div class="card"><h3>shpjs + toGeoJSON</h3><p class="muted">Leitura de Shapefile e KML no navegador, sem upload para servidor.</p></div>
       <div class="card"><h3>SortableJS</h3><p class="muted">Reordenação das camadas por arrastar e soltar.</p></div>
+      <div class="card"><h3>PWA</h3><p class="muted">Manifesto, ícones e service worker para instalação e carregamento offline do app shell.</p></div>
       <div class="card"><h3>Rawline</h3><p class="muted">Tipografia do Design System do Governo Federal (gov.br).</p></div>
     </div>
   </section>

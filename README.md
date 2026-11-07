@@ -38,6 +38,7 @@ O arquivo `data/territorio.pmtiles` tem 29,6 MB no total, mas o navegador baixa 
 - **Legenda recolhível**: mostra as camadas visíveis e as categorias do zoneamento.
 - **Tema claro/escuro** (abre no claro por padrão) e preferências de camadas salvas no navegador.
 - **Responsivo**: painel vira uma gaveta inferior no celular; a identificação vira uma folha inferior.
+- **Instalável (PWA)**: manifesto, ícones e service worker. O app abre em janela própria, o app shell fica em cache e o botão **Instalar aplicativo** aparece no ⓘ quando o navegador permite.
 
 ---
 
@@ -48,9 +49,12 @@ index.html            aplicação (sem build step)
 css/app.css           design system próprio, sem Tailwind
 js/app.js             mapa, catálogo, filtros, identificação, upload
 vendor/               MapLibre GL, PMTiles, Sortable, shpjs, togeojson (versões fixas, locais)
+manifest.json         manifesto PWA (nome, ícones, atalhos)
+sw.js                 service worker (cache do app shell; PMTiles segue por Range)
+icons/                ícones 192/512, maskable e apple-touch-icon
 data/
   territorio.pmtiles  tiles vetoriais z4–z12 (fonte única das 12 camadas)
-  layers.json         metadados, simbologia e estatísticas de filtro (~55 KB)
+  layers.json         metadados, simbologia e estatísticas de filtro (~180 KB)
   *.geojson           bases originais em resolução completa (usadas só no download)
 assets/               fontes Rawline e logotipos otimizados
 scripts/
@@ -68,6 +72,7 @@ Decisões principais:
 - **`layers.json`** concentra rótulos, cores, campos primários e os valores únicos de cada campo com contagem, para popular o filtro sem varrer os dados.
 - **MapLibre GL JS 6** com o protocolo PMTiles registrado em runtime.
 - Bibliotecas e fontes são locais e versionadas; não há dependência de CDN no carregamento inicial.
+- **PWA** com `manifest.json` + `sw.js`: o app shell é cacheado, mas requisições com `Range` e o arquivo `.pmtiles` passam direto para preservar o carregamento por partes.
 
 ---
 
@@ -81,6 +86,8 @@ node scripts/serve.mjs
 ```
 
 O servidor de desenvolvimento suporta `Range` (necessário para PMTiles) e gzip.
+
+O service worker é registrado em `https://` ou `localhost`. Para testar a instalação, use `http://localhost:4173/` ou o site publicado; em `file://` ele não é registrado. O app shell funciona offline depois da primeira visita; os tiles do mapa e os downloads continuam online.
 
 Para publicar, basta servir os arquivos estáticos do repositório. O GitHub Pages já suporta Range Requests. Se usar outro host (S3, Netlify, IIS), confirme que `Range` está habilitado para `data/territorio.pmtiles`.
 
@@ -121,6 +128,7 @@ O script grava os GeoJSON normalizados em `%TEMP%/visualizador-tiles` e imprime 
 - Filtros e identificação usam os atributos dos tiles. Campos com mais de 250 valores únicos (ex.: área) não aparecem no filtro.
 - Uploads valem para a sessão atual; não são persistidos.
 - O PMTiles é um arquivo de ~30 MB no repositório. Arquivos acima de 50 MB não são recomendados no GitHub.
+- O modo offline cobre o app shell (interface, catálogo, filtros e legenda). Os tiles do mapa e os downloads de GeoJSON precisam de conexão.
 
 ---
 
@@ -137,6 +145,7 @@ O script grava os GeoJSON normalizados em `%TEMP%/visualizador-tiles` e imprime 
 - **Tippecanoe 2.53** — geração dos tiles (via WSL)
 - **shpjs / toGeoJSON** — leitura de Shapefile e KML no navegador
 - **SortableJS** — reordenação das camadas
+- **PWA (manifest + service worker)** — instalação e cache do app shell
 - **Rawline** — tipografia do Design System gov.br
 
 ---
