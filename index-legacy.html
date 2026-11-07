@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="pt-br" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visualizador Geoespacial - IDEFLOR-Bio</title>
+
+  <!-- Typography: Rawline (Gov.br DS) & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="preload" href="assets/fonts/rawline/rawline-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/rawline/rawline-700.woff2" as="font" type="font/woff2" crossorigin>
+
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- VectorGrid, SortableJS, shpjs & togeojson -->
+  <script src="https://unpkg.com/leaflet.vectorgrid@1.3.0/dist/leaflet.vectorgrid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+  <script src="https://unpkg.com/shpjs@latest/dist/shp.js"></script>
+  <script src="https://unpkg.com/@tmcw/togeojson@5.8.1/dist/togeojson.umd.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Rawline', 'Inter', 'sans-serif'],
+            heading: ['Rawline', 'Plus Jakarta Sans', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            gov: {
+              50: '#edf5ff',
+              100: '#d4e5ff',
+              200: '#adcdff',
+              300: '#81aefc',
+              400: '#5992ed',
+              500: '#2670e8',
+              600: '#1351b4',
+              700: '#0c326f',
+              800: '#274863',
+              900: '#0c326f',
+              950: '#071d41',
+            },
+            slate: {
+              400: '#a9aeb1',
+              500: '#8d9297',
+              600: '#71767a',
+              700: '#3d4551',
+              800: '#274863',
+              900: '#0c326f',
+              950: '#071d41',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    @font-face {
+      font-family: "Rawline";
+      src: url("assets/fonts/rawline/rawline-400.woff2") format("woff2");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "Rawline";
+      src: url("assets/fonts/rawline/rawline-500.woff2") format("woff2");
+      font-weight: 500;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "Rawline";
+      src: url("assets/fonts/rawline/rawline-600.woff2") format("woff2");
+      font-weight: 600;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "Rawline";
+      src: url("assets/fonts/rawline/rawline-700.woff2") format("woff2");
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: "Rawline";
+      src: url("assets/fonts/rawline/rawline-800.woff2") format("woff2");
+      font-weight: 800;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    html, body { margin: 0; height: 100%; font-family: 'Rawline', 'Inter', sans-serif; overflow: hidden; background-color: #071d41; }
+    #map { height: calc(100vh - 4rem); width: 100%; z-index: 0; }
+    .leaflet-control-container .leaflet-control-attribution { font-size: 0.7rem; opacity: 0.8; }
+
+    /* Custom Glassmorphism Panels */
+    .glass-panel {
+      background: rgba(7, 29, 65, 0.9);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(39, 72, 99, 0.7);
+    }
+    .light .glass-panel {
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(212, 229, 255, 0.9);
+    }
+
+    /* Custom Legend */
+    .legend {
+      background: rgba(7, 29, 65, 0.92) !important;
+      color: #f1f5f9 !important;
+      padding: 12px 16px;
+      border-radius: 4px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(39, 72, 99, 0.7);
+      font-size: 0.75rem;
+      line-height: 22px;
+    }
+    .light .legend {
+      background: rgba(255, 255, 255, 0.95) !important;
+      color: #333333 !important;
+      border: 1px solid rgba(212, 229, 255, 0.9);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    .legend i { width: 16px; height: 16px; float: left; margin-right: 8px; margin-top: 3px; border-radius: 4px; }
+    .legend .line { width: 16px; height: 16px; float: left; margin-right: 8px; margin-top: 3px; }
+    .legend .line i { border: 2px solid; opacity: 1; border-radius: 0; }
+
+    /* Sortable list styling */
+    #layerOrderList li {
+      transition: all 0.2s ease;
+    }
+    #layerOrderList li:active {
+      cursor: grabbing;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+      transform: translateY(-2px);
+    }
+    .sortable-ghost {
+      opacity: 0.4;
+      background-color: #1351b4 !important;
+    }
+
+    /* Active cursor mode when identifying */
+    body.identify-active #map {
+      cursor: crosshair !important;
+    }
+    .leaflet-container.identify-cursor {
+      cursor: crosshair !important;
+    }
+
+    /* Garantir que o Balão do Identificador fique por cima de TODOS os elementos */
+    .leaflet-popup-pane, .leaflet-popup {
+      z-index: 99999 !important;
+    }
+
+    /* Estilo do Balão do Identificador (Leaflet Popup) */
+    .leaflet-popup-content-wrapper {
+      background: rgba(7, 29, 65, 0.96) !important;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      color: #f1f5f9 !important;
+      border: 1px solid rgba(19, 81, 180, 0.6) !important;
+      border-radius: 6px !important;
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.7) !important;
+      padding: 0 !important;
+    }
+    .light .leaflet-popup-content-wrapper {
+      background: rgba(255, 255, 255, 0.98) !important;
+      color: #333333 !important;
+      border: 1px solid rgba(19, 81, 180, 0.4) !important;
+      box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.15) !important;
+    }
+    .leaflet-popup-tip {
+      background: rgba(7, 29, 65, 0.96) !important;
+      border: 1px solid rgba(19, 81, 180, 0.6) !important;
+    }
+    .light .leaflet-popup-tip {
+      background: rgba(255, 255, 255, 0.98) !important;
+    }
+    .leaflet-popup-content {
+      margin: 12px 14px !important;
+      max-width: 320px !important;
+      max-height: 320px !important;
+      overflow-y: auto !important;
+    }
+    .leaflet-container a.leaflet-popup-close-button {
+      color: #94a3b8 !important;
+      padding: 6px 8px !important;
+    }
+  </style>
+</head>
+<body class="dark bg-slate-950 text-slate-100 font-sans antialiased">
+
+  <!-- ==================== HEADER ==================== -->
+  <header class="h-16 bg-slate-900/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-800 px-4 flex items-center justify-between z-40 relative shadow-md">
+    <div class="flex items-center space-x-3">
+      <button id="toggleSidebarBtn" class="lg:hidden p-2 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 transition">
+        <i data-lucide="panel-left" class="w-5 h-5"></i>
+      </button>
+      <div class="flex items-center space-x-3">
+        <img src="logo_ngeo.png" alt="Logo NGEO IDEFLOR-Bio" class="h-10 w-auto" />
+        <div>
+          <h1 class="font-heading font-bold text-sm sm:text-base text-white leading-tight flex items-center gap-2">
+            Visualizador Geoespacial
+            <span class="text-[10px] font-mono uppercase bg-gov-500/20 text-gov-300 border border-gov-500/30 px-2 py-0.5 rounded-full hidden sm:inline-block">IDEFLOR-Bio</span>
+          </h1>
+          <p class="text-[11px] text-slate-400 hidden md:block">Governo do Estado do Pará • Dados e Camadas Geoespaciais</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Header Right Actions -->
+    <div class="flex items-center space-x-2">
+      <!-- Theme Switcher -->
+      <button id="themeToggleBtn" title="Alternar Tema Escuro / Claro" class="p-2 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+        <i data-lucide="sun" class="w-4 h-4 text-amber-400 hidden dark:block"></i>
+        <i data-lucide="moon" class="w-4 h-4 text-slate-700 block dark:hidden"></i>
+      </button>
+
+      <!-- About App Button -->
+      <a href="documentacao.html" target="_blank" id="aboutAppBtn" class="flex items-center gap-1.5 bg-gov-600 hover:bg-gov-500 text-white font-semibold py-2 px-3.5 rounded-md text-xs shadow-lg shadow-gov-950/40 transition">
+        <i data-lucide="info" class="w-4 h-4"></i>
+        <span class="hidden sm:inline">Sobre o App</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN WORKSPACE ==================== -->
+  <div class="flex h-[calc(100vh-4rem)] relative">
+    
+    <!-- MOBILE BACKDROP OVERLAY -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-20 opacity-0 pointer-events-none lg:hidden transition-opacity duration-300"></div>
+
+    <!-- LEFT SIDEBAR: LAYER MANAGEMENT & ADVANCED FILTERS -->
+    <aside id="sidebar" class="w-80 lg:w-96 glass-panel h-full z-30 flex flex-col border-r border-slate-800 transition-all duration-300 absolute lg:relative -translate-x-full lg:translate-x-0 shadow-2xl">
+      
+      <!-- Tabs Header -->
+      <div class="flex border-b border-slate-800 bg-slate-950/40 text-xs font-semibold font-heading">
+        <button id="tabLayersBtn" class="flex-1 py-3 px-4 flex items-center justify-center gap-2 border-b-2 border-gov-500 text-gov-400 font-bold bg-slate-900/50">
+          <i data-lucide="layers" class="w-4 h-4"></i>
+          <span>Camadas</span>
+        </button>
+        <button id="tabFilterBtn" class="flex-1 py-3 px-4 flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200 border-b-2 border-transparent">
+          <i data-lucide="filter" class="w-4 h-4"></i>
+          <span>Filtrar Dados</span>
+        </button>
+      </div>
+
+      <!-- TAB 1: CAMADAS & ORDEM (REORDENAÇÃO DRAG & DROP + OPACIDADE) -->
+      <div id="tabLayersContent" class="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+        <div class="flex items-center justify-between text-slate-400 font-mono text-[11px]">
+          <span>ARRASTE PARA REORDENAR</span>
+          <i data-lucide="grip-vertical" class="w-4 h-4"></i>
+        </div>
+
+        <!-- Lista Reordenável de Camadas -->
+        <ul id="layerOrderList" class="space-y-2"></ul>
+      </div>
+
+      <!-- TAB 2: FILTRO POR ATRIBUTOS -->
+      <div id="tabFilterContent" class="flex-1 overflow-y-auto p-4 space-y-3.5 text-xs hidden">
+        <div>
+          <label for="layerSelect" class="block text-slate-300 font-semibold mb-1">Selecionar Camada</label>
+          <select id="layerSelect" class="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded-md p-2.5 focus:ring-1 focus:ring-gov-500 focus:border-gov-500"></select>
+        </div>
+
+        <div>
+          <label for="columnSelect" class="block text-slate-300 font-semibold mb-1">Selecionar Coluna</label>
+          <select id="columnSelect" disabled class="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded-md p-2.5 focus:ring-1 focus:ring-gov-500 focus:border-gov-500 disabled:opacity-50"></select>
+        </div>
+
+        <div>
+          <label for="valueSelect" class="block text-slate-300 font-semibold mb-1">Selecionar Valor</label>
+          <select id="valueSelect" disabled class="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded-md p-2.5 focus:ring-1 focus:ring-gov-500 focus:border-gov-500 disabled:opacity-50"></select>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button id="applyFilterBtn" class="flex-1 bg-gov-600 hover:bg-gov-500 text-white font-bold py-2 px-3 rounded-md shadow-lg transition flex items-center justify-center gap-1.5">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            <span>Aplicar</span>
+          </button>
+          <button id="clearFiltersBtn" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2 px-3 rounded-md border border-slate-700 transition flex items-center justify-center gap-1.5">
+            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+            <span>Limpar</span>
+          </button>
+        </div>
+
+        <div class="p-3 bg-slate-900/80 rounded-md border border-slate-800 flex items-center justify-between text-xs pt-3">
+          <span id="countBadge" class="font-mono text-gov-400 font-bold">0 selecionados</span>
+          <a id="downloadBtn" class="text-xs text-blue-400 underline font-semibold flex items-center gap-1" href="#" download="dados_filtrados.geojson">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>Baixar GeoJSON</span>
+          </a>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- RIGHT MAP CANVAS & FLOATING TOOL DOCK -->
+    <div class="flex-1 relative h-full">
+      
+      <!-- FLOATING MAP ACTION TOOLBAR (TOP LEFT DOCK) -->
+      <div class="absolute top-3 left-3 z-20 flex flex-col gap-2">
+        <div id="mapActionControls" class="flex items-center gap-2 bg-slate-900/90 backdrop-blur-md p-1.5 rounded-lg border border-slate-700/80 shadow-2xl">
+          <!-- Identify Feature Tool -->
+          <button id="identifyBtn" class="bg-slate-800/80 hover:bg-slate-700 text-slate-200 py-1.5 px-3 rounded-md transition flex items-center gap-2 group" title="Identificar Feições no Mapa">
+            <i data-lucide="mouse-pointer-click" class="w-4 h-4 text-gov-400 group-hover:scale-110 transition"></i>
+            <span class="text-xs font-semibold">Identificar</span>
+          </button>
+
+          <div class="h-4 w-px bg-slate-700"></div>
+
+          <!-- Toggle Outline Mode Tool -->
+          <button id="toggleOutlineBtn" class="bg-slate-800/80 hover:bg-slate-700 text-slate-200 py-1.5 px-3 rounded-md transition flex items-center gap-2 group" title="Alternar Modo Contorno">
+            <i data-lucide="square" class="w-4 h-4 text-amber-400 group-hover:scale-110 transition"></i>
+            <span class="text-xs font-semibold">Contornos</span>
+          </button>
+
+          <div class="h-4 w-px bg-slate-700"></div>
+
+          <!-- Reset Map Extent Tool -->
+          <button id="resetViewBtn" class="bg-slate-800/80 hover:bg-slate-700 text-slate-200 py-1.5 px-3 rounded-md transition flex items-center gap-2 group" title="Resetar Visão para o Pará">
+            <i data-lucide="maximize" class="w-4 h-4 text-cyan-400 group-hover:scale-110 transition"></i>
+            <span class="text-xs font-semibold">Visão Geral</span>
+          </button>
+
+          <div class="h-4 w-px bg-slate-700"></div>
+
+          <!-- Upload Custom Vector Tool -->
+          <button id="uploadVectorBtn" class="bg-slate-800/80 hover:bg-slate-700 text-slate-200 py-1.5 px-3 rounded-md transition flex items-center gap-2 group" title="Carregar Vetor (.zip / Shapefile, .kml, .geojson)">
+            <i data-lucide="upload-cloud" class="w-4 h-4 text-purple-400 group-hover:scale-110 transition"></i>
+            <span class="text-xs font-semibold">Subir Arquivo</span>
+          </button>
+          <input type="file" id="vectorFileInput" accept=".zip,.kml,.geojson,.json,.shp" class="hidden" />
+        </div>
+
+        <!-- IDENTIFY LAYER SELECTION POPOVER -->
+        <div id="identifyMenu" class="hidden glass-panel p-3 rounded-lg border border-slate-700 shadow-2xl w-64 text-xs space-y-2">
+          <div class="flex items-center justify-between font-bold text-white border-b border-slate-800 pb-1.5">
+            <span class="flex items-center gap-1.5"><i data-lucide="filter" class="w-3.5 h-3.5 text-gov-400"></i> Identificar Camadas:</span>
+            <button id="toggleAllIdentifyBtn" type="button" class="text-[10px] text-gov-400 hover:underline">Todas / Nenhuma</button>
+          </div>
+          <div id="identifyCheckboxes" class="space-y-1.5 max-h-48 overflow-y-auto pt-1"></div>
+        </div>
+      </div>
+
+      <!-- MAP CONTAINER -->
+      <div id="map"></div>
+
+      <!-- INSPECTOR SIDE-SHEET (DETALHES DA FEIÇÃO IDENTIFICADA) -->
+      <aside id="inspectorSideSheet" class="absolute top-4 right-4 sm:right-16 bottom-4 w-full sm:w-96 glass-panel rounded-lg z-30 p-4 flex flex-col shadow-2xl border border-slate-700/80 transform translate-x-full transition-transform duration-300 hidden">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="info" class="w-5 h-5 text-gov-400"></i>
+            <h3 class="font-heading font-bold text-sm text-white">Inspeção de Feição</h3>
+          </div>
+          <button id="closeInspectorBtn" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <div id="inspectorContent" class="flex-1 overflow-y-auto pt-3 space-y-4 text-xs">
+          <!-- Dynamic Feature Properties Table -->
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- ABOUT MODAL -->
+  <div id="aboutAppModal" class="modal-overlay">
+    <div class="modal-content glass-panel p-6 rounded-lg max-w-lg w-full shadow-2xl border border-slate-700 text-slate-200">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+        <h2 class="text-lg font-heading font-bold text-white flex items-center gap-2">
+          <i data-lucide="trees" class="w-5 h-5 text-gov-400"></i>
+          Sobre o Visualizador Geoespacial
+        </h2>
+        <button id="closeModalBtn" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed mb-4">
+        Desenvolvido para o <strong>IDEFLOR-Bio (Instituto de Desenvolvimento Florestal e da Biodiversidade do Estado do Pará)</strong>, este portal centraliza a consulta de dados de Áreas Protegidas, Terras Indígenas, Territórios Quilombolas e Limites Territoriais do Pará.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-3 pt-2">
+        <a href="documentacao.html" target="_blank" class="flex-1 bg-gov-600 hover:bg-gov-500 text-white font-bold py-2 px-4 rounded-md shadow-md transition text-center text-xs flex items-center justify-center gap-2">
+          <i data-lucide="book-open" class="w-4 h-4"></i>
+          <span>Documentação Completa</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Logic -->
+  <script>
+    /* ---------- Estado Global ---------- */
+    let map;
+    let originalLayers = {};
+    let layerOpacities = {};
+    let activeLayerName;
+    let legendControl;
+    let layerControlRef;
+    let currentFilteredFC = null;
+    let identifyActive = false;
+    let isOutlineModeActive = false;
+    let originalMapBounds;
+
+    /* ---------- UI References ---------- */
+    const layerSel = document.getElementById('layerSelect');
+    const colSel = document.getElementById('columnSelect');
+    const valSel = document.getElementById('valueSelect');
+    const applyBtn = document.getElementById('applyFilterBtn');
+    const clearBtn = document.getElementById('clearFiltersBtn');
+    const countEl = document.getElementById('countBadge');
+    const dlBtn = document.getElementById('downloadBtn');
+    const layerOrderList = document.getElementById('layerOrderList');
+
+    const identifyBtn = document.getElementById('identifyBtn');
+    const toggleOutlineBtn = document.getElementById('toggleOutlineBtn');
+    const resetViewBtn = document.getElementById('resetViewBtn');
+    const uploadVectorBtn = document.getElementById('uploadVectorBtn');
+    const vectorFileInput = document.getElementById('vectorFileInput');
+    const inspectorSideSheet = document.getElementById('inspectorSideSheet');
+    const inspectorContent = document.getElementById('inspectorContent');
+    const closeInspectorBtn = document.getElementById('closeInspectorBtn');
+
+    /* ---------- Utils & Toast ---------- */
+    const norm = v => (v === null || v === undefined) ? '' : String(v).trim();
+    const uniq = arr => Array.from(new Set(arr));
+
+    function showNotification(msg, type = 'success') {
+      let toast = document.getElementById('toastNotification');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toastNotification';
+        toast.className = 'fixed bottom-5 left-1/2 -translate-x-1/2 z-50 glass-panel px-4 py-2.5 rounded-lg border border-gov-500/50 shadow-2xl text-xs font-semibold text-gov-300 flex items-center gap-2 transition-all duration-300 transform opacity-0 pointer-events-none translate-y-4';
+        document.body.appendChild(toast);
+      }
+      toast.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}" class="w-4 h-4 text-gov-400"></i><span>${msg}</span>`;
+      lucide.createIcons();
+      
+      toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+      }, 5000);
+    }
+
+    /* ---------- Estilos / Cores Institucionais ---------- */
+    const getMassaDaguaStyle = () => ({ fillColor: '#78d4e9', color: '#78d4e9', weight: 1, opacity: 1, fillOpacity: layerOpacities['Massa d\'Água'] ?? 0.8 });
+    const getMunicipiosStyle = () => ({ fillColor:'transparent', weight: 1.5, opacity: 0.8, color:'#94a3b8', dashArray:'4, 4', fillOpacity: 0 });
+    
+    const getQuilombosEstaduaisStyle = () => ({
+      fillColor: '#74381e',
+      color: isOutlineModeActive ? '#74381e' : '#000000',
+      weight: isOutlineModeActive ? 2.5 : 1,
+      opacity: 1,
+      fillOpacity: isOutlineModeActive ? 0 : (layerOpacities['Quilombos Estaduais'] ?? 0.7)
+    });
+    
+    const getQuilombosFederaisStyle = () => ({
+      fillColor: '#c37d64',
+      color: isOutlineModeActive ? '#c37d64' : '#000000',
+      weight: isOutlineModeActive ? 2.5 : 1,
+      opacity: 1,
+      fillOpacity: isOutlineModeActive ? 0 : (layerOpacities['Quilombos Federais'] ?? 0.7)
+    });
+    
+    const getTerrasIndigenasStyle = () => ({
+      fillColor: '#f4cd94',
+      color: isOutlineModeActive ? '#f4cd94' : '#78350f',
+      weight: isOutlineModeActive ? 2.5 : 1,
+      opacity: 1,
+      fillOpacity: isOutlineModeActive ? 0 : (layerOpacities['Terras Indígenas'] ?? 0.75)
+    });
+    
+    const getUcsEstaduaisStyle = () => ({
+      fillColor: '#15803d',
+      color: isOutlineModeActive ? '#15803d' : '#064e3b',
+      weight: isOutlineModeActive ? 2.5 : 1.2,
+      opacity: 1,
+      fillOpacity: isOutlineModeActive ? 0 : (layerOpacities['UCs Estaduais'] ?? 0.75)
+    });
+    
+    const getUcsFederaisStyle = () => ({
+      fillColor: '#65a30d',
+      color: isOutlineModeActive ? '#65a30d' : '#3f6212',
+      weight: isOutlineModeActive ? 2.5 : 1.2,
+      opacity: 1,
+      fillOpacity: isOutlineModeActive ? 0 : (layerOpacities['UCs Federais'] ?? 0.75)
+    });
+    
+    const getRegioesIntegracaoStyle = () => ({ fillColor:'transparent', weight: 2.5, opacity:0.9, color:'#b45309', fillOpacity: 0 });
+
+    const getZoneamentosEstaduaisStyle = (feature) => {
+      const zona = (feature?.properties?.ZONA || feature?.properties?.SIGLA || '').toLowerCase();
+      let fillColor = '#6366f1'; // Indigo default
+
+      if (zona.includes('preserv') || zona.includes('nula') || zona.includes('intensa preserv')) {
+        fillColor = '#047857'; // Verde Escuro / Preservação
+      } else if (zona.includes('conserv') || zona.includes('manejo')) {
+        fillColor = '#10b981'; // Verde Esmeralda / Conservação
+      } else if (zona.includes('amorteciment')) {
+        fillColor = '#f59e0b'; // Âmbar / Amortecimento
+      } else if (zona.includes('moderad') || zona.includes('baixo impacto') || zona.includes('extensiv')) {
+        fillColor = '#84cc16'; // Verde Lima / Uso Moderado
+      } else if (zona.includes('intensiv') || zona.includes('populacion') || zona.includes('comunit') || zona.includes('morador')) {
+        fillColor = '#3b82f6'; // Azul / Uso Intensivo/Populacional
+      } else if (zona.includes('produ') || zona.includes('alta') || zona.includes('conflit') || zona.includes('tempor')) {
+        fillColor = '#ef4444'; // Vermelho / Produção/Conflito/Alta Intervenção
+      } else if (zona.includes('recupera') || zona.includes('degradad')) {
+        fillColor = '#d97706'; // Marrom / Terracota / Recuperação
+      } else if (zona.includes('hist') || zona.includes('cultur')) {
+        fillColor = '#a855f7'; // Roxo / Histórico-Cultural
+      }
+
+      const opacity = layerOpacities['Zoneamento UCs Estaduais'] ?? 0.75;
+      if (isOutlineModeActive) {
+        return { fillColor: 'transparent', color: fillColor, weight: 2.5, opacity: 1, fillOpacity: 0 };
+      }
+      return { fillColor: fillColor, color: fillColor, weight: 1, opacity: 0.9, fillOpacity: opacity };
+    };
+
+    const getCentroTreinamentoStyle = () => {
+      const opacity = layerOpacities['Centro de Treinamento Agroflorestal'] ?? 0.8;
+      return {
+        fillColor: '#06b6d4',
+        color: isOutlineModeActive ? '#06b6d4' : '#0e7490',
+        weight: isOutlineModeActive ? 2.5 : 1.5,
+        opacity: 1,
+        fillOpacity: isOutlineModeActive ? 0 : opacity
+      };
+    };
+
+    const getConcessoesFlorestaisStyle = () => {
+      const opacity = layerOpacities['Concessões Florestais (IDEFLOR-Bio)'] ?? 0.75;
+      const fillColor = '#16a34a';
+      if (isOutlineModeActive) {
+        return { fillColor: 'transparent', color: fillColor, weight: 2.5, opacity: 1, fillOpacity: 0 };
+      }
+      return { fillColor: fillColor, color: '#14532d', weight: 1.2, opacity: 0.9, fillOpacity: opacity };
+    };
+
+    const getContratosTransicaoStyle = () => {
+      const opacity = layerOpacities['Contratos de Transição (IDEFLOR-Bio)'] ?? 0.75;
+      const fillColor = '#ea580c';
+      if (isOutlineModeActive) {
+        return { fillColor: 'transparent', color: fillColor, weight: 2.5, opacity: 1, fillOpacity: 0 };
+      }
+      return { fillColor: fillColor, color: '#9a3412', weight: 1.2, opacity: 0.9, fillOpacity: opacity };
+    };
+
+    const getMassaDaguaVectorStyle = () => ({ weight: 0.5, color: '#78d4e9', opacity: 1, fillColor: '#78d4e9', fillOpacity: layerOpacities['Massa d\'Água'] ?? 0.8 });
+
+    /* ---------- Identify Inspector Side-Sheet & Filter ---------- */
+    function renderIdentifyCheckboxes() {
+      const container = document.getElementById('identifyCheckboxes');
+      if (!container) return;
+
+      const checkedState = {};
+      container.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+        const name = chk.id.replace('identify-chk-', '');
+        checkedState[name] = chk.checked;
+      });
+
+      container.innerHTML = '';
+      Object.keys(originalLayers).forEach(layerName => {
+        if (layerName === 'Massa d\'Água') return;
+        const isChecked = checkedState[layerName] !== undefined ? checkedState[layerName] : true;
+        const label = document.createElement('label');
+        label.className = 'flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-800/80 cursor-pointer text-slate-200 text-xs';
+        label.innerHTML = `
+          <span>${layerName}</span>
+          <input type="checkbox" id="identify-chk-${layerName}" ${isChecked ? 'checked' : ''} class="accent-gov-500 w-4 h-4 rounded cursor-pointer">
+        `;
+        container.appendChild(label);
+      });
+
+      const toggleBtn = document.getElementById('toggleAllIdentifyBtn');
+      if (toggleBtn) {
+        toggleBtn.onclick = () => {
+          const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+          const anyUnchecked = Array.from(checkboxes).some(c => !c.checked);
+          checkboxes.forEach(c => c.checked = anyUnchecked);
+        };
+      }
+    }
+
+    /* ---------- Algoritmo de Interseção Ponto-em-Polígono (Ray-Casting) ---------- */
+    function isPointInRing(lng, lat, ring) {
+      let inside = false;
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const xi = ring[i][0], yi = ring[i][1];
+        const xj = ring[j][0], yj = ring[j][1];
+        const intersect = ((yi > lat) !== (yj > lat)) &&
+          (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+
+    function isPointInGeometry(latlng, geometry) {
+      if (!geometry || !geometry.coordinates) return false;
+      const lng = latlng.lng;
+      const lat = latlng.lat;
+      const type = geometry.type;
+
+      if (type === 'Polygon') {
+        const rings = geometry.coordinates;
+        if (!isPointInRing(lng, lat, rings[0])) return false;
+        for (let i = 1; i < rings.length; i++) {
+          if (isPointInRing(lng, lat, rings[i])) return false;
+        }
+        return true;
+      }
+
+      if (type === 'MultiPolygon') {
+        for (const polygon of geometry.coordinates) {
+          if (isPointInRing(lng, lat, polygon[0])) {
+            let inHole = false;
+            for (let i = 1; i < polygon.length; i++) {
+              if (isPointInRing(lng, lat, polygon[i])) {
+                inHole = true;
+                break;
+              }
+            }
+            if (!inHole) return true;
+          }
+        }
+        return false;
+      }
+
+      if (type === 'Point') {
+        const dx = geometry.coordinates[0] - lng;
+        const dy = geometry.coordinates[1] - lat;
+        return (dx * dx + dy * dy) < 0.0001;
+      }
+
+      if (type === 'MultiPoint') {
+        for (const pt of geometry.coordinates) {
+          const dx = pt[0] - lng;
+          const dy = pt[1] - lat;
+          if ((dx * dx + dy * dy) < 0.0001) return true;
+        }
+        return false;
+      }
+
+      return false;
+    }
+
+    function showPopupForLayers(e) {
+      if (!identifyActive) return;
+
+      let foundFeatures = [];
+      const featureKeys = new Set();
+      const layersToCheck = Object.keys(originalLayers);
+
+      layersToCheck.forEach(layerName => {
+        if (layerName === 'Massa d\'Água') return;
+
+        // Verifica se a camada está checada no filtro do Identificador
+        const chk = document.getElementById(`identify-chk-${layerName}`);
+        if (chk && !chk.checked) return;
+
+        const layerData = originalLayers[layerName];
+        if (layerData && map.hasLayer(layerData.leafletLayer)) {
+          // Checa o array direto de features (GeoJSON direct)
+          if (layerData.features && Array.isArray(layerData.features)) {
+            layerData.features.forEach(feat => {
+              if (feat && feat.geometry) {
+                if (isPointInGeometry(e.latlng, feat.geometry)) {
+                  const featKey = `${layerName}::${JSON.stringify(feat.properties)}`;
+                  if (!featureKeys.has(featKey)) {
+                    featureKeys.add(featKey);
+                    foundFeatures.push({
+                      layerName: layerName,
+                      properties: feat.properties
+                    });
+                  }
+                }
+              }
+            });
+          } else if (layerData.leafletLayer && layerData.leafletLayer.eachLayer) {
+            layerData.leafletLayer.eachLayer(layer => {
+              if (layer.feature && layer.feature.geometry) {
+                if (isPointInGeometry(e.latlng, layer.feature.geometry)) {
+                  const featKey = `${layerName}::${JSON.stringify(layer.feature.properties)}`;
+                  if (!featureKeys.has(featKey)) {
+                    featureKeys.add(featKey);
+                    foundFeatures.push({
+                      layerName: layerName,
+                      properties: layer.feature.properties
+                    });
+                  }
+                }
+              }
+            });
+          }
+        }
+      });
+
+      if (foundFeatures.length > 0) {
+        let popupHtml = `
+          <div class="space-y-2.5 text-xs font-sans">
+            <div class="flex items-center justify-between border-b border-slate-700/60 pb-2 pr-4">
+              <span class="font-heading font-bold text-gov-400 text-xs flex items-center gap-1.5">
+                <i data-lucide="info" class="w-4 h-4"></i>
+                Informações do Ponto
+              </span>
+              <span class="text-[10px] font-mono text-slate-400 font-semibold">${foundFeatures.length} feição(ões)</span>
+            </div>
+            <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
+        `;
+
+        foundFeatures.forEach((item, idx) => {
+          let propsList = Object.entries(item.properties)
+            .map(([k, v]) => `<div class="flex justify-between py-0.5 border-b border-slate-800/40 text-[11px]"><span class="text-slate-400 font-mono text-[10px]">${k}:</span><span class="font-semibold text-slate-200 text-right ml-2 text-[11px]">${v}</span></div>`)
+            .join('');
+
+          popupHtml += `
+            <div class="bg-slate-900/90 p-2.5 rounded-md border border-slate-800 space-y-1">
+              <div class="font-heading font-bold text-gov-300 text-xs flex items-center justify-between border-b border-slate-800/80 pb-1">
+                <span>${item.layerName}</span>
+              </div>
+              <div class="pt-1 space-y-0.5">
+                ${propsList}
+              </div>
+            </div>
+          `;
+        });
+
+        popupHtml += `</div></div>`;
+
+        L.popup({
+          maxWidth: 320,
+          className: 'custom-identify-popup'
+        })
+          .setLatLng(e.latlng)
+          .setContent(popupHtml)
+          .openOn(map);
+
+        lucide.createIcons();
+      }
+    }
+
+    function openInspector(features) {
+      inspectorSideSheet.classList.remove('hidden', 'translate-x-full');
+      inspectorContent.innerHTML = '';
+
+      features.forEach((item, idx) => {
+        const card = document.createElement('div');
+        card.className = 'bg-slate-900/90 border border-slate-800 p-3 rounded-md space-y-2';
+
+        let propsHtml = Object.entries(item.properties)
+          .map(([k, v]) => `<div class="flex justify-between border-b border-slate-800/60 py-1"><span class="text-slate-400 font-mono text-[10px]">${k}:</span><span class="font-semibold text-slate-200 text-[11px] text-right ml-2">${v}</span></div>`)
+          .join('');
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+            <span class="font-heading font-bold text-gov-400 text-xs">${item.layerName}</span>
+            <span class="text-[10px] text-slate-500 font-mono">Feição #${idx + 1}</span>
+          </div>
+          <div class="space-y-0.5 max-h-48 overflow-y-auto pr-1">
+            ${propsHtml}
+          </div>
+        `;
+        inspectorContent.appendChild(card);
+      });
+
+      lucide.createIcons();
+    }
+
+    closeInspectorBtn.onclick = () => {
+      inspectorSideSheet.classList.add('translate-x-full');
+      setTimeout(() => inspectorSideSheet.classList.add('hidden'), 300);
+    };
+
+    /* ---------- Legenda Dinâmica ---------- */
+    function createLegend() {
+      legendControl = L.control({ position: 'bottomright' });
+      legendControl.onAdd = () => {
+        const div = L.DomUtil.create('div', 'legend');
+        div.innerHTML = '<strong>Legenda</strong>';
+        return div;
+      };
+      legendControl.addTo(map);
+      updateLegend();
+    }
+
+    function updateLegend() {
+      const el = document.querySelector('.legend'); if (!el) return;
+      let html = '<strong class="font-heading block mb-1">Legenda</strong>';
+      
+      const layers = [
+        { name: 'Massa d\'Água', layerRef: originalLayers['Massa d\'Água']?.leafletLayer, color: '#78d4e9', type: 'polygon' },
+        { name: 'Municípios', layerRef: originalLayers['Municípios']?.leafletLayer, color: '#94a3b8', type: 'dashed_line' },
+        { name: 'Regiões de Integração', layerRef: originalLayers['Regiões de Integração']?.leafletLayer, color: '#b45309', type: 'line' },
+        { name: 'Centro de Treinamento Agroflorestal', layerRef: originalLayers['Centro de Treinamento Agroflorestal']?.leafletLayer, color: '#06b6d4', type: 'polygon' },
+        { name: 'Concessões Florestais (IDEFLOR-Bio)', layerRef: originalLayers['Concessões Florestais (IDEFLOR-Bio)']?.leafletLayer, color: '#16a34a', type: 'polygon' },
+        { name: 'Contratos de Transição (IDEFLOR-Bio)', layerRef: originalLayers['Contratos de Transição (IDEFLOR-Bio)']?.leafletLayer, color: '#ea580c', type: 'polygon' },
+        { name: 'Zoneamento UCs Estaduais', layerRef: originalLayers['Zoneamento UCs Estaduais']?.leafletLayer, color: '#6366f1', type: 'polygon' },
+        { name: 'UCs Estaduais', layerRef: originalLayers['UCs Estaduais']?.leafletLayer, color: '#15803d', type: 'polygon' },
+        { name: 'Terras Indígenas', layerRef: originalLayers['Terras Indígenas']?.leafletLayer, color: '#f4cd94', type: 'polygon' },
+        { name: 'UCs Federais', layerRef: originalLayers['UCs Federais']?.leafletLayer, color: '#65a30d', type: 'polygon' },
+        { name: 'Quilombos Estaduais', layerRef: originalLayers['Quilombos Estaduais']?.leafletLayer, color: '#74381e', type: 'polygon' },
+        { name: 'Quilombos Federais', layerRef: originalLayers['Quilombos Federais']?.leafletLayer, color: '#c37d64', type: 'polygon' },
+      ];
+
+      // Adiciona dinamicamente camadas carregadas pelo usuário à legenda
+      Object.keys(originalLayers).forEach(name => {
+        if (name.startsWith('Uploaded: ')) {
+          layers.push({ name: name.replace('Uploaded: ', 'Vetor: '), layerRef: originalLayers[name]?.leafletLayer, color: '#ec4899', type: 'polygon' });
+        }
+      });
+
+      layers.forEach(l => {
+        if (l.layerRef && map.hasLayer(l.layerRef)) {
+          if (l.type === 'polygon') {
+            if (isOutlineModeActive) {
+              html += `<div class="flex items-center gap-1.5 mb-1"><i style="background:transparent; border: 2px solid ${l.color}; font-style:normal;"></i> <span>${l.name}</span></div>`;
+            } else {
+              html += `<div class="flex items-center gap-1.5 mb-1"><i style="background:${l.color}; font-style:normal;"></i> <span>${l.name}</span></div>`; 
+            }
+          }
+          else if (l.type === 'line') { html += `<div class="flex items-center gap-1.5 mb-1"><div class="line" style="border:2.5px solid ${l.color}; background:transparent"></div> <span>${l.name}</span></div>`; }
+          else if (l.type === 'dashed_line') { html += `<div class="flex items-center gap-1.5 mb-1"><div class="line" style="border:1.5px dashed ${l.color}; background:transparent"></div> <span>${l.name}</span></div>`; }
+        }
+      });
+      el.innerHTML = html;
+    }
+
+    /* ---------- Filtros & Download ---------- */
+    function updateCount(n) { countEl.textContent = `${n} selecionado${n === 1 ? '' : 's'}`; }
+
+    function buildDownload(fc) {
+      try {
+        const blob = new Blob([JSON.stringify(fc, null, 2)], { type: 'application/geo+json' });
+        const url = URL.createObjectURL(blob);
+        dlBtn.href = url; dlBtn.download = 'dados_filtrados.geojson';
+        dlBtn.style.display = 'inline-flex';
+      } catch(e) {}
+    }
+
+    function populateLayerSelect(layers) {
+      layerSel.innerHTML = '';
+      const ph = document.createElement('option'); ph.value = ''; ph.textContent = '— escolha a camada —'; layerSel.appendChild(ph);
+      Object.keys(layers).forEach(k => {
+        const opt = document.createElement('option');
+        opt.value = k;
+        opt.textContent = k;
+        layerSel.appendChild(opt);
+      });
+      colSel.disabled = true;
+      valSel.disabled = true;
+    }
+
+    function populateColumns(layerName) {
+      const features = originalLayers[layerName]?.features || [];
+      const first = features.find(f => f && f.properties) || null;
+      const keys = first ? Object.keys(first.properties) : [];
+      colSel.innerHTML = '';
+      if (!keys.length) {
+        const opt = document.createElement('option'); opt.value = ''; opt.textContent = '(sem colunas)';
+        colSel.appendChild(opt); colSel.disabled = true; return;
+      }
+      const ph = document.createElement('option'); ph.value = ''; ph.textContent = '— escolha a coluna —'; colSel.appendChild(ph);
+      keys.forEach(k => { 
+        const o = document.createElement('option'); 
+        o.value = k; 
+        if (k === 'Municipios_lista') o.textContent = 'Municípios Sobrepostos';
+        else if (k === 'RegioesIntegracao_lista') o.textContent = 'Reg. Integr. Sobrepostas';
+        else o.textContent = k;
+        colSel.appendChild(o); 
+      });
+      colSel.disabled = false;
+      valSel.innerHTML = ''; valSel.disabled = true;
+    }
+
+    function populateValues(layerName, column) {
+      const features = originalLayers[layerName]?.features || [];
+      let values = [];
+      if (column.endsWith('_lista')) {
+        features.forEach(f => {
+          const valList = f?.properties?.[column]?.split(',').map(v => norm(v));
+          if (valList) values = values.concat(valList);
+        });
+      } else {
+        values = features.map(f => f?.properties?.[column]).map(norm);
+      }
+
+      const uniqVals = uniq(values).sort((a,b) => a.localeCompare(b, 'pt-BR', { numeric: true, sensitivity: 'base' }));
+      valSel.innerHTML = '';
+      const ph = document.createElement('option'); ph.value = ''; ph.textContent = '— escolha o valor —'; valSel.appendChild(ph);
+      const all = document.createElement('option'); all.value = '__ALL__'; all.textContent = '(Todos)'; valSel.appendChild(all);
+      uniqVals.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = (v === '' ? '(vazio)' : v); valSel.appendChild(o); });
+      valSel.disabled = false;
+      valSel.value = '__ALL__';
+    }
+
+    function filterFC(layerName, column, value) {
+      const features = originalLayers[layerName]?.features || [];
+      if (!column || !value || value === '__ALL__') return { type: 'FeatureCollection', features: features };
+      if (column.endsWith('_lista')) {
+        return {
+          type: 'FeatureCollection',
+          features: features.filter(f => {
+            const valList = f?.properties?.[column]?.split(',').map(v => norm(v));
+            return valList && valList.includes(norm(value));
+          })
+        };
+      }
+      return {
+        type: 'FeatureCollection',
+        features: features.filter(f => norm(f?.properties?.[column]) === norm(value))
+      };
+    }
+
+    function refreshMap(fc, layerName) {
+      map.eachLayer(l => {
+        if (l instanceof L.GeoJSON) map.removeLayer(l);
+      });
+
+      const filteredResultsGroup = L.featureGroup();
+      currentFilteredFC = { type: 'FeatureCollection', features: [] };
+
+      const styleFunc = originalLayers[layerName]?.styleFunc;
+      if (!styleFunc) return;
+
+      let primaryStyle = styleFunc();
+      if (isOutlineModeActive && primaryStyle.fillColor && primaryStyle.fillColor !== 'transparent') {
+        primaryStyle = { ...primaryStyle, color: primaryStyle.fillColor, fillOpacity: 0, weight: 3 };
+      }
+      const primaryFilteredLayer = L.geoJSON(fc, { style: primaryStyle });
+      filteredResultsGroup.addLayer(primaryFilteredLayer);
+      currentFilteredFC.features.push(...fc.features);
+
+      // Filtro por sobreposição para Municípios ou Regiões de Integração
+      if ((layerName === 'Municípios' || layerName === 'Regiões de Integração') && valSel.value && valSel.value !== '__ALL__') {
+        const otherLayers = Object.keys(originalLayers).filter(name => name !== 'Municípios' && name !== 'Regiões de Integração' && name !== 'Massa d\'Água');
+        
+        otherLayers.forEach(otherLayerName => {
+          const otherLayerData = originalLayers[otherLayerName];
+          const column = layerName === 'Municípios' ? 'Municipios_lista' : 'RegioesIntegracao_lista';
+          const filteredFeatures = otherLayerData.features ? otherLayerData.features.filter(f => {
+            const valList = f?.properties?.[column]?.split(',').map(v => norm(v));
+            return valList && valList.includes(norm(valSel.value));
+          }) : [];
+          
+          if (filteredFeatures.length > 0) {
+            let otherStyle = otherLayerData.styleFunc ? otherLayerData.styleFunc() : {};
+            if (isOutlineModeActive && otherStyle.fillColor && otherStyle.fillColor !== 'transparent') {
+              otherStyle = { ...otherStyle, color: otherStyle.fillColor, fillOpacity: 0, weight: 3 };
+            }
+            const newLayer = L.geoJSON({ type: 'FeatureCollection', features: filteredFeatures }, { style: otherStyle });
+            filteredResultsGroup.addLayer(newLayer);
+            currentFilteredFC.features.push(...filteredFeatures);
+          }
+        });
+      }
+
+      filteredResultsGroup.addTo(map);
+      if (filteredResultsGroup.getLayers().length > 0 && filteredResultsGroup.getBounds().isValid()) {
+        map.flyToBounds(filteredResultsGroup.getBounds(), { padding: [30,30], duration: 0.6, maxZoom: 13 });
+      }
+
+      updateCount(currentFilteredFC.features.length);
+      buildDownload(currentFilteredFC);
+      updateLegend();
+    }
+
+    /* ---------- Reordenação de Camadas & Opacidade ---------- */
+    function populateLayerOrderList(layers) {
+      layerOrderList.innerHTML = '';
+      const sortableLayers = [
+        "Municípios", 
+        "Regiões de Integração",
+        "Centro de Treinamento Agroflorestal",
+        "Concessões Florestais (IDEFLOR-Bio)",
+        "Contratos de Transição (IDEFLOR-Bio)",
+        "Zoneamento UCs Estaduais",
+        "UCs Estaduais", 
+        "Terras Indígenas", 
+        "UCs Federais", 
+        "Quilombos Estaduais", 
+        "Quilombos Federais"
+      ];
+
+      Object.keys(layers).forEach(k => {
+        if (k.startsWith('Uploaded: ') && !sortableLayers.includes(k)) {
+          sortableLayers.push(k);
+        }
+      });
+
+      sortableLayers.forEach(layerName => {
+        if (layers[layerName]) {
+          const li = document.createElement('li');
+          li.className = 'bg-slate-900/90 border border-slate-800 p-2.5 rounded-md cursor-grab flex items-center justify-between gap-2 text-xs text-slate-200 hover:border-gov-500/50';
+          li.dataset.layerName = layerName;
+          
+          li.innerHTML = `
+            <div class="flex items-center gap-2">
+              <i data-lucide="grip-vertical" class="w-4 h-4 text-slate-500"></i>
+              <span class="font-semibold">${layerName}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="range" min="0" max="1" step="0.1" value="0.75" title="Opacidade" class="w-16 accent-gov-500 cursor-pointer opacity-slider" data-layer="${layerName}">
+            </div>
+          `;
+          layerOrderList.appendChild(li);
+        }
+      });
+
+      // Opacity sliders event listeners
+      document.querySelectorAll('.opacity-slider').forEach(slider => {
+        slider.addEventListener('input', (e) => {
+          const lName = e.target.dataset.layer;
+          const val = parseFloat(e.target.value);
+          layerOpacities[lName] = val;
+          if (originalLayers[lName]?.leafletLayer) {
+            originalLayers[lName].leafletLayer.setStyle({ fillOpacity: val });
+          }
+        });
+      });
+
+      lucide.createIcons();
+    }
+
+    function refreshLayerOrderOnMap() {
+      const listItems = Array.from(layerOrderList.querySelectorAll('li'));
+      const orderedLayers = listItems.map(li => li.dataset.layerName);
+      const invertedOrder = orderedLayers.reverse();
+
+      const massaDaguaLayer = originalLayers['Massa d\'Água']?.leafletLayer;
+      if (massaDaguaLayer && map.hasLayer(massaDaguaLayer)) {
+        massaDaguaLayer.bringToBack();
+      }
+
+      invertedOrder.forEach(layerName => {
+        const layer = originalLayers[layerName]?.leafletLayer;
+        if (layer && map.hasLayer(layer)) {
+          layer.bringToFront();
+        }
+      });
+      updateLegend();
+    }
+
+    function toggleOutlineMode() {
+      isOutlineModeActive = !isOutlineModeActive;
+      toggleOutlineBtn.classList.toggle('bg-blue-600', isOutlineModeActive);
+
+      Object.values(originalLayers).forEach(layerData => {
+        if (layerData.leafletLayer && typeof layerData.leafletLayer.setStyle === 'function' && layerData.styleFunc) {
+          layerData.leafletLayer.setStyle(layerData.styleFunc);
+        }
+      });
+      updateLegend();
+    }
+
+    /* ---------- Processador de Upload de Vetores (.zip, .kml, .geojson) ---------- */
+    async function handleVectorUpload(file) {
+      const fileName = file.name;
+      const ext = fileName.split('.').pop().toLowerCase();
+
+      try {
+        let geojsonData = null;
+
+        if (ext === 'geojson' || ext === 'json') {
+          const text = await file.text();
+          geojsonData = JSON.parse(text);
+        } else if (ext === 'kml') {
+          const text = await file.text();
+          const dom = new DOMParser().parseFromString(text, 'text/xml');
+          if (typeof toGeoJSON !== 'undefined' && toGeoJSON.kml) {
+            geojsonData = toGeoJSON.kml(dom);
+          } else {
+            throw new Error('Biblioteca toGeoJSON não disponível.');
+          }
+        } else if (ext === 'zip' || ext === 'shp') {
+          const buffer = await file.arrayBuffer();
+          if (typeof shp !== 'undefined') {
+            geojsonData = await shp(buffer);
+          } else {
+            throw new Error('Biblioteca shpjs não disponível.');
+          }
+        } else {
+          alert('Formato não suportado. Por favor, envie .geojson, .kml ou Shapefile (.zip).');
+          return;
+        }
+
+        if (!geojsonData) throw new Error('Não foi possível extrair dados geoespaciais.');
+
+        if (Array.isArray(geojsonData)) {
+          geojsonData = geojsonData[0];
+        }
+
+        const featureCount = geojsonData.features ? geojsonData.features.length : 0;
+        if (featureCount === 0) {
+          alert('O arquivo não contém nenhuma feição espacial válida.');
+          return;
+        }
+
+        const userLayerName = `Uploaded: ${fileName.replace(/\.[^/.]+$/, '')}`;
+        const userStyle = () => ({
+          fillColor: '#ec4899',
+          color: '#db2777',
+          weight: 2.5,
+          opacity: 1,
+          fillOpacity: isOutlineModeActive ? 0 : 0.45
+        });
+
+        const userLeafletLayer = L.geoJSON(geojsonData, {
+          style: userStyle,
+          onEachFeature: (feature, layer) => {
+            if (feature.properties) {
+              let popupContent = `<div class="font-heading font-bold text-pink-400 border-b border-slate-700 pb-1 mb-1 text-xs">Vetor Carregado (${fileName})</div><div class="max-h-40 overflow-y-auto text-[11px] space-y-0.5">`;
+              Object.entries(feature.properties).forEach(([k, v]) => {
+                popupContent += `<div><strong class="text-slate-400 font-mono text-[10px]">${k}:</strong> <span class="text-slate-200">${v}</span></div>`;
+              });
+              popupContent += `</div>`;
+              layer.bindPopup(popupContent);
+            }
+          }
+        });
+
+        userLeafletLayer.addTo(map);
+
+        if (userLeafletLayer.getBounds().isValid()) {
+          map.flyToBounds(userLeafletLayer.getBounds(), { padding: [40, 40], duration: 1.0 });
+        }
+
+        originalLayers[userLayerName] = {
+          features: geojsonData.features,
+          leafletLayer: userLeafletLayer,
+          styleFunc: userStyle
+        };
+
+        if (layerControlRef) {
+          layerControlRef.addOverlay(userLeafletLayer, userLayerName);
+        }
+
+        const filterableLayers = { ...originalLayers };
+        delete filterableLayers['Massa d\'Água'];
+        populateLayerSelect(filterableLayers);
+        populateLayerOrderList(originalLayers);
+        renderIdentifyCheckboxes();
+        updateLegend();
+
+        showNotification(`Vetor "${fileName}" carregado no mapa! (${featureCount} feição(ões))`, 'success');
+
+      } catch (err) {
+        console.error('Erro no upload de vetor:', err);
+        alert(`Erro ao processar "${fileName}": ${err.message}`);
+      }
+    }
+
+    /* ---------- Boot Application ---------- */
+    window.onload = async function () {
+      lucide.createIcons();
+
+      // Base Neutral Tiles (Com chave de API CARTO fornecida pelo usuário)
+      const cartoVoyager = L.tileLayer('https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=', { maxZoom: 19, attribution: '&copy; CARTO' });
+      const cartoPositron = L.tileLayer('https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png?key=', { maxZoom: 19, attribution: '&copy; CARTO' });
+      const cartoDark = L.tileLayer('https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png?key=', { maxZoom: 19, attribution: '&copy; CARTO' });
+      const googleRelief = L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', { maxZoom: 18, attribution: '&copy; Google' });
+      const googleSat = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { maxZoom: 20, attribution: '&copy; Google' });
+      const esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '&copy; Esri' });
+      const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' });
+
+      const baseLayers = {
+        "Carto Voyager (Chave Ativa)": cartoVoyager,
+        "CARTO Dark (Escuro)": cartoDark,
+        "CARTO Positron (Claro)": cartoPositron,
+        "Google Relevo": googleRelief,
+        "Google Satellite": googleSat,
+        "ESRI World Imagery": esriSat,
+        "OpenStreetMap": osm
+      };
+
+      map = L.map('map', { center: [-5.0, -50.0], zoom: 6, layers: [cartoVoyager], zoomControl: false });
+      L.control.zoom({ position: 'bottomleft' }).addTo(map);
+
+      try {
+        const [
+          municipiosRes, ucsEstaduaisRes, ucsFederaisRes, regioesRes,
+          quilombosEstaduaisRes, quilombosFederaisRes, terrasIndigenasRes,
+          zoneamentosRes, centroTreinamentoRes, concessoesRes, contratosRes
+        ] = await Promise.all([
+          fetch('data/municipios.geojson'),
+          fetch('data/ucs_estaduais.geojson'),
+          fetch('data/ucs_federais.geojson'),
+          fetch('data/regioes_integracao.geojson'),
+          fetch('data/quilombos_estaduais.geojson'),
+          fetch('data/quilombos_federais.geojson'),
+          fetch('data/terras_indigenas.geojson'),
+          fetch('data/zoneamentos_ucs_estaduais.geojson'),
+          fetch('data/centro_treinamento.geojson'),
+          fetch('data/concessoes_florestais_ideflor.geojson'),
+          fetch('data/contratos_de_transicao.geojson')
+        ]);
+
+        const [
+          municipiosData, ucsEstaduaisData, ucsFederaisData, regioesData,
+          quilombosEstaduaisData, quilombosFederaisData, terrasIndigenasData,
+          zoneamentosData, centroTreinamentoData, concessoesData, contratosData
+        ] = await Promise.all([
+          municipiosRes.json(), ucsEstaduaisRes.json(), ucsFederaisRes.json(), regioesRes.json(),
+          quilombosEstaduaisRes.json(), quilombosFederaisRes.json(), terrasIndigenasRes.json(),
+          zoneamentosRes.json(), centroTreinamentoRes.json(), concessoesRes.json(), contratosRes.json()
+        ]);
+
+        originalLayers['Municípios'] = { features: municipiosData.features, leafletLayer: L.geoJSON(municipiosData, { style: getMunicipiosStyle }), styleFunc: getMunicipiosStyle };
+        originalLayers['Regiões de Integração'] = { features: regioesData.features, leafletLayer: L.geoJSON(regioesData, { style: getRegioesIntegracaoStyle }), styleFunc: getRegioesIntegracaoStyle };
+        originalLayers['Centro de Treinamento Agroflorestal'] = { features: centroTreinamentoData.features, leafletLayer: L.geoJSON(centroTreinamentoData, { style: getCentroTreinamentoStyle }), styleFunc: getCentroTreinamentoStyle };
+        originalLayers['Concessões Florestais (IDEFLOR-Bio)'] = { features: concessoesData.features, leafletLayer: L.geoJSON(concessoesData, { style: getConcessoesFlorestaisStyle }), styleFunc: getConcessoesFlorestaisStyle };
+        originalLayers['Contratos de Transição (IDEFLOR-Bio)'] = { features: contratosData.features, leafletLayer: L.geoJSON(contratosData, { style: getContratosTransicaoStyle }), styleFunc: getContratosTransicaoStyle };
+        originalLayers['Zoneamento UCs Estaduais'] = { features: zoneamentosData.features, leafletLayer: L.geoJSON(zoneamentosData, { style: getZoneamentosEstaduaisStyle }), styleFunc: getZoneamentosEstaduaisStyle };
+        originalLayers['UCs Estaduais'] = { features: ucsEstaduaisData.features, leafletLayer: L.geoJSON(ucsEstaduaisData, { style: getUcsEstaduaisStyle }), styleFunc: getUcsEstaduaisStyle };
+        originalLayers['Terras Indígenas'] = { features: terrasIndigenasData.features, leafletLayer: L.geoJSON(terrasIndigenasData, { style: getTerrasIndigenasStyle }), styleFunc: getTerrasIndigenasStyle };
+        originalLayers['UCs Federais'] = { features: ucsFederaisData.features, leafletLayer: L.geoJSON(ucsFederaisData, { style: getUcsFederaisStyle }), styleFunc: getUcsFederaisStyle };
+        originalLayers['Quilombos Estaduais'] = { features: quilombosEstaduaisData.features, leafletLayer: L.geoJSON(quilombosEstaduaisData, { style: getQuilombosEstaduaisStyle }), styleFunc: getQuilombosEstaduaisStyle };
+        originalLayers['Quilombos Federais'] = { features: quilombosFederaisData.features, leafletLayer: L.geoJSON(quilombosFederaisData, { style: getQuilombosFederaisStyle }), styleFunc: getQuilombosFederaisStyle };
+
+        const massaDaguaStyle = { 'water': getMassaDaguaVectorStyle() };
+        originalLayers['Massa d\'Água'] = {
+          leafletLayer: L.vectorGrid.protobuf("https://api.maptiler.com/tiles/0199583b-df1d-7f23-aa9f-46218575d630/{z}/{x}/{y}.pbf?key=", { vectorTileLayerStyles: massaDaguaStyle }),
+          styleFunc: getMassaDaguaVectorStyle
+        };
+
+        const overlayLayers = {
+          "Massa d'Água": originalLayers['Massa d\'Água'].leafletLayer,
+          "Quilombos Federais": originalLayers['Quilombos Federais'].leafletLayer,
+          "Quilombos Estaduais": originalLayers['Quilombos Estaduais'].leafletLayer,
+          "UCs Federais": originalLayers['UCs Federais'].leafletLayer,
+          "Terras Indígenas": originalLayers['Terras Indígenas'].leafletLayer,
+          "UCs Estaduais": originalLayers['UCs Estaduais'].leafletLayer,
+          "Contratos de Transição (IDEFLOR-Bio)": originalLayers['Contratos de Transição (IDEFLOR-Bio)'].leafletLayer,
+          "Concessões Florestais (IDEFLOR-Bio)": originalLayers['Concessões Florestais (IDEFLOR-Bio)'].leafletLayer,
+          "Centro de Treinamento Agroflorestal": originalLayers['Centro de Treinamento Agroflorestal'].leafletLayer,
+          "Zoneamento UCs Estaduais": originalLayers['Zoneamento UCs Estaduais'].leafletLayer,
+          "Regiões de Integração": originalLayers['Regiões de Integração'].leafletLayer,
+          "Municípios": originalLayers['Municípios'].leafletLayer,
+        };
+
+        layerControlRef = L.control.layers(baseLayers, overlayLayers, { position: 'topright' }).addTo(map);
+
+        // Adiciona camadas iniciais ao mapa EXCETO as desligadas por padrão
+        const offByDefault = [
+          'Zoneamento UCs Estaduais',
+          'Centro de Treinamento Agroflorestal',
+          'Concessões Florestais (IDEFLOR-Bio)',
+          'Contratos de Transição (IDEFLOR-Bio)'
+        ];
+
+        Object.entries(originalLayers).forEach(([name, l]) => {
+          if (!offByDefault.includes(name)) {
+            l.leafletLayer?.addTo(map);
+          }
+        });
+
+        createLegend();
+        map.on('overlayadd overlayremove baselayerchange layeradd layerremove', updateLegend);
+
+        const filterableLayers = { ...originalLayers };
+        delete filterableLayers['Massa d\'Água'];
+        populateLayerSelect(filterableLayers);
+        updateCount(0);
+        dlBtn.style.display = 'none';
+
+        if (originalLayers['Municípios'].leafletLayer && originalLayers['Municípios'].leafletLayer.getBounds().isValid()) {
+          map.flyToBounds(originalLayers['Municípios'].leafletLayer.getBounds());
+          originalMapBounds = map.getBounds();
+        }
+
+        map.on('click', showPopupForLayers);
+
+        populateLayerOrderList(overlayLayers);
+        new Sortable(layerOrderList, {
+          animation: 150,
+          ghostClass: 'sortable-ghost',
+          onEnd: function () { refreshLayerOrderOnMap(); }
+        });
+        refreshLayerOrderOnMap();
+
+      } catch (err) {
+        console.error('Erro ao carregar dados:', err);
+      }
+
+      /* ---------- Eventos UI & Tabs ---------- */
+      document.getElementById('tabLayersBtn').onclick = () => {
+        document.getElementById('tabLayersContent').classList.remove('hidden');
+        document.getElementById('tabFilterContent').classList.add('hidden');
+        document.getElementById('tabLayersBtn').className = 'flex-1 py-3 px-4 flex items-center justify-center gap-2 border-b-2 border-gov-500 text-gov-400 font-bold bg-slate-900/50';
+        document.getElementById('tabFilterBtn').className = 'flex-1 py-3 px-4 flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200 border-b-2 border-transparent';
+      };
+
+      document.getElementById('tabFilterBtn').onclick = () => {
+        document.getElementById('tabFilterContent').classList.remove('hidden');
+        document.getElementById('tabLayersContent').classList.add('hidden');
+        document.getElementById('tabFilterBtn').className = 'flex-1 py-3 px-4 flex items-center justify-center gap-2 border-b-2 border-gov-500 text-gov-400 font-bold bg-slate-900/50';
+        document.getElementById('tabLayersBtn').className = 'flex-1 py-3 px-4 flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200 border-b-2 border-transparent';
+      };
+
+      identifyBtn.onclick = () => {
+        identifyActive = !identifyActive;
+        identifyBtn.classList.toggle('bg-gov-600', identifyActive);
+        document.body.classList.toggle('identify-active', identifyActive);
+
+        const menu = document.getElementById('identifyMenu');
+        if (identifyActive) {
+          menu.classList.remove('hidden');
+          renderIdentifyCheckboxes();
+        } else {
+          menu.classList.add('hidden');
+          inspectorSideSheet.classList.add('translate-x-full');
+          setTimeout(() => inspectorSideSheet.classList.add('hidden'), 300);
+        }
+      };
+
+      toggleOutlineBtn.onclick = toggleOutlineMode;
+
+      resetViewBtn.onclick = () => {
+        if (originalMapBounds) map.flyToBounds(originalMapBounds);
+      };
+
+      /* ---------- Upload de Arquivos Vetoriais ---------- */
+      uploadVectorBtn.onclick = () => vectorFileInput.click();
+
+      vectorFileInput.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        await handleVectorUpload(file);
+        vectorFileInput.value = '';
+      };
+
+      layerSel.onchange = () => {
+        const layerName = layerSel.value;
+        activeLayerName = layerName;
+        if (!layerName) { colSel.disabled = true; valSel.disabled = true; return; }
+        populateColumns(layerName);
+      };
+
+      colSel.onchange = () => {
+        const colName = colSel.value;
+        if (!colName) { valSel.disabled = true; return; }
+        populateValues(activeLayerName, colName);
+      };
+
+      applyBtn.onclick = () => {
+        const layerName = layerSel.value;
+        const col = colSel.value;
+        const val = valSel.value;
+        if (!layerName) return;
+        const fc = filterFC(layerName, col, val);
+        refreshMap(fc, layerName);
+      };
+
+      clearBtn.onclick = () => {
+        layerSel.value = '';
+        colSel.innerHTML = ''; colSel.disabled = true;
+        valSel.innerHTML = ''; valSel.disabled = true;
+        updateCount(0);
+        dlBtn.style.display = 'none';
+
+        Object.values(originalLayers).forEach(l => {
+          if (!map.hasLayer(l.leafletLayer)) l.leafletLayer.addTo(map);
+        });
+        if (originalMapBounds) map.flyToBounds(originalMapBounds);
+        updateLegend();
+      };
+
+      // Theme toggle
+      document.getElementById('themeToggleBtn').onclick = () => {
+        document.documentElement.classList.toggle('dark');
+        document.documentElement.classList.toggle('light');
+      };
+
+      // Mobile Sidebar Toggle
+      const sidebar = document.getElementById('sidebar');
+      const sidebarOverlay = document.getElementById('sidebarOverlay');
+      
+      function toggleSidebar(open) {
+        if (open === undefined) open = sidebar.classList.contains('-translate-x-full');
+        if (open) {
+          sidebar.classList.remove('-translate-x-full');
+          if (sidebarOverlay) sidebarOverlay.classList.remove('opacity-0', 'pointer-events-none');
+        } else {
+          sidebar.classList.add('-translate-x-full');
+          if (sidebarOverlay) sidebarOverlay.classList.add('opacity-0', 'pointer-events-none');
+        }
+      }
+
+      document.getElementById('toggleSidebarBtn').onclick = () => toggleSidebar();
+      if (sidebarOverlay) sidebarOverlay.onclick = () => toggleSidebar(false);
+    };
+  </script>
+</body>
+</html>

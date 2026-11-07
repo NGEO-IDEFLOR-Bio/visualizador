@@ -1,121 +1,146 @@
-# Visualizador Geoespacial do IDEFLOR-Bio
+# Visualizador Geoespacial do NGEO/IDEFLOR-Bio
 
-Este é um aplicativo web interativo de **Sistema de Informação Geográfica (WebGIS)** desenvolvido para o **Instituto de Desenvolvimento Florestal e da Biodiversidade do Estado do Pará (IDEFLOR-Bio)**. A ferramenta foi projetada para otimizar a consulta, visualização e análise de dados territoriais e socioambientais do Estado do Pará em reuniões técnicas e tomada de decisão.
+Aplicativo web de consulta e análise territorial desenvolvido pelo **NGEO** (Núcleo de Geoinformação) do **IDEFLOR-Bio** (Instituto de Desenvolvimento Florestal e da Biodiversidade do Estado do Pará). É uma ferramenta interna do NGEO, disponibilizada ao público. Reúne limites, unidades de conservação, terras indígenas, territórios quilombolas e bases institucionais em um mapa interativo, pensado para reuniões técnicas e apoio à decisão.
+
+**Acesse:** [https://ngeo-ideflor-bio.github.io/visualizador/](https://ngeo-ideflor-bio.github.io/visualizador/)
 
 ---
 
-## Visão Geral
+## O que mudou na versão 2
 
-O **Visualizador Geoespacial** reúne em um único portal vetores geográficos essenciais, como limites de municípios, regiões de integração, unidades de conservação estaduais e federais, terras indígenas, territórios quilombolas e hidrografia.
+A versão anterior carregava **80,5 MB de GeoJSON** (2,5 milhões de vértices) e montava as 11 camadas de uma vez, mesmo as desligadas. O resultado era um carregamento de dezenas de segundos e navegação travada.
 
-A aplicação conta com uma interface moderna em **Tailwind CSS**, suporte a **Modo Escuro / Claro**, painel lateral retrátil, reordenação de camadas por *drag-and-drop*, controle individual de opacidade, ferramenta de identificação pontual com balão em ponto real, filtros por atributos com download em GeoJSON e mapas base neutros e de satélite.
+A versão atual usa **tiles vetoriais PMTiles** e **MapLibre GL (WebGL)**:
 
-**Screenshot da Interface Inicial:**
+| Métrica | Antes (Leaflet + GeoJSON) | Agora (MapLibre + PMTiles) |
+|---|---|---|
+| Download inicial | ~27 MB (gzip) | **~1 MB** (gzip) |
+| Dados do mapa no primeiro paint | 80,5 MB | **~250 KB** (cabeçalho + tiles visíveis) |
+| Camadas renderizadas no boot | 11 (todas) | 5 visíveis; as demais só quando ativadas |
+| Vértices no renderizador | 2,5 milhões | tiles simplificados por zoom |
+| Motor de desenho | SVG | WebGL |
+| Estado da interface | Tailwind compilado em runtime | CSS estático (~1,5 mil linhas de menos) |
 
-![Interface Inicial](demo/inicial.png)
+O arquivo `data/territorio.pmtiles` tem 29,6 MB no total, mas o navegador baixa apenas o cabeçalho e os tiles da área visível, sob demanda (HTTP Range).
 
 ---
 
 ## Funcionalidades
 
-### 1. Seletor de Camadas & Controle de Opacidade
-
-Permite ativar ou desativar camadas temáticas (Municípios, Regiões de Integração, UCs Estaduais/Federais, Terras Indígenas, Quilombos e Massa d'Água) e ajustar a transparência individual de cada camada em tempo real de 0% a 100%.
-
-**Screenshot do Seletor de Camadas:**
-
-![Seletor de Camadas](demo/seletor_camadas.png)
-
-### 2. Reordenação Interativa de Camadas (Drag-and-Drop)
-
-O painel de controle possui uma lista interativa baseada em *Sortable.js* que permite arrastar e soltar as camadas para definir a ordem exata de exibição no mapa (quais polígonos ficam sobrepostos à frente).
-
-**Screenshot da Reordenação de Camadas:**
-
-![Reordenação de Camadas](demo/ordenar_camadas.png)
-
-### 3. Filtro por Atributos & Download GeoJSON
-
-Permite isolar feições selecionando a camada, coluna de atributos e valor desejado. Exibe a contagem exata de itens selecionados e permite o download imediato dos dados filtrados no formato GeoJSON. Para Municípios e Regiões de Integração, calcula também todas as UCs, Terras Indígenas e Quilombos sobrepostos.
-
-**Screenshot do Filtro por Atributos:**
-
-![Filtro de Camadas](demo/filtro.png)
-
-**Screenshot do Download de Dados:**
-
-![Download de Dados](demo/download.png)
-
-### 4. Ferramenta de Identificação (`Identify`) com Balão Ancorado
-
-Similar aos SIGs profissionais, permite clicar em qualquer ponto do mapa para abrir um **Balão Popup ancorado** (`z-index: 99999`) trazendo a lista de atributos de todas as camadas visíveis ou filtradas naquele local. Inclui um menu de seleção de quais camadas devem ser consultadas.
-
-**Screenshot da Ferramenta de Identificação:**
-
-![Ferramenta de Identificação](demo/identificador.png)
-
-### 5. Modo Contorno (Outline)
-
-Alterna a renderização de polígonos entre preenchimento sólido e contorno espesso vazado, ideal para analisar imagens de satélite e sobreposição de limites sem obstrução visual.
-
-**Screenshot do Modo Contorno:**
-
-![Modo Contorno](demo/modo_outline.png)
-
-### 6. Subir Arquivo Vetorial (Shapefile .zip, KML, GeoJSON)
-
-Permite carregar arquivos geoespaciais locais diretamente no navegador através do botão **Subir Arquivo** na barra superior. Suporta arquivos **Shapefile (.zip)**, **KML (.kml)** e **GeoJSON (.geojson / .json)**. O processamento é realizado 100% no client-side (compatível com GitHub Pages), realizando centralização automática no mapa (*flyToBounds*) e adicionando o vetor à legenda e lista de camadas.
-
-**Screenshot do Carregamento de Vetor:**
-
-![Subir Arquivo Vetorial](demo/subir_arquivo.png)
-
-### 7. Zoneamento das UCs Estaduais
-
-Inclui os zoneamentos das Unidades de Conservação Estaduais do Pará com simbologia institucional categorizada (Preservação, Conservação, Amortecimento, Uso Moderado, Uso Intensivo, Produção, Recuperação). A camada inicia **desligada por padrão** para garantir leveza na inicialização, sendo suportada no modo preenchido e contorno (Outline).
-
-### 8. Centro de Treinamento Agroflorestal (IDEFLOR-Bio)
-
-Polígono delimitador do Centro de Treinamento Agroflorestal do IDEFLOR-Bio. Permite consultar área e perímetro destinados às atividades de extensão e pesquisa agroflorestal. Inicia **desligado por padrão**.
-
-### 9. Concessões Florestais (IDEFLOR-Bio)
-
-Camada das Unidades de Manejo Florestal (UMFs) sob concessão florestal pública estadual no Pará. Traz atributos detalhados de processos, concessionárias e municípios. Inicia **desligada por padrão**.
-
-### 10. Contratos de Transição (IDEFLOR-Bio)
-
-Mapeamento dos instrumentos administrativos temporários criados pelo IDEFLOR-Bio para garantir a oferta legal de madeira em florestas públicas estaduais do Pará antes da implementação definitiva das concessões florestais. Inicia **desligada por padrão**.
-
-### 11. Legenda Dinâmica e Controles Responsivos
-
-Uma legenda dinâmica no canto inferior direito exibe as cores e estilos das camadas ativas. Os botões de zoom `+` / `-` ficam situados no canto inferior esquerdo e toda a interface é 100% responsiva para dispositivos móveis e tablets.
-
-**Screenshot da Legenda:**
-
-![Legenda](demo/legenda.png)
+- **Clique para identificar**: um clique no mapa abre uma gaveta com todas as feições daquele ponto, agrupadas por camada, com destaque da geometria no mapa. Não existe mais “modo identificar”.
+- **Catálogo de camadas**: lista agrupada (Limites, Socioambiental, Unidades de Conservação, IDEFLOR-Bio), com contagem de feições, olho para exibir/ocultar e opacidade individual.
+- **Reordenar sobreposição**: o botão **Ordenar** transforma a lista em uma pilha; arraste para definir o que fica na frente.
+- **Filtro por atributo**: selecione camada, campo e valor. O mapa aproxima o recorte automaticamente, destaca o limite em azul e mostra a contagem. Filtros em municípios/regiões também recortam as camadas sobrepostas (comparação sem diferenciar maiúsculas/minúsculas).
+- **Baixar GeoJSON**: exporta o recorte atual com a **geometria completa**, buscando o arquivo original só no momento do download.
+- **Subir arquivo vetorial**: GeoJSON, KML e Shapefile (`.zip`), processados 100% no navegador. O arquivo entra no catálogo, pode ser filtrado, identificado e baixado.
+- **Modo contorno**: exibe apenas os limites das áreas, ideal sobre imagem de satélite.
+- **Mapa de base**: neutro (claro/escuro, seguindo o tema) ou imagem de satélite (Esri World Imagery).
+- **Legenda recolhível**: mostra as camadas visíveis e as categorias do zoneamento.
+- **Tema claro/escuro** (abre no claro por padrão) e preferências de camadas salvas no navegador.
+- **Responsivo**: painel vira uma gaveta inferior no celular; a identificação vira uma folha inferior.
 
 ---
 
-## Tecnologias Utilizadas
+## Arquitetura
 
-* **HTML5, CSS3 (Tailwind CSS v3)** e **JavaScript ES6+**: Para estrutura, estilização responsiva e lógica de aplicação.
-* **Leaflet.js (v1.9.4)**: Biblioteca de mapas interativos de alta performance.
-* **shpjs & toGeoJSON**: Leitura e conversão client-side de Shapefiles (.zip), KML e GeoJSON no navegador.
-* **Leaflet.VectorGrid**: Renderização de camadas vetoriais pesadas (Massa d'Água) via Vector Tiles (Protobuf PBF).
-* **Sortable.js**: Reordenação intuitiva de camadas por *drag-and-drop*.
-* **Lucide Icons**: Iconografia moderna e legível.
-* **GeoJSON**: Formato de dados geoespaciais padronizado.
-* **Provedores de Tiles (CARTO Voyager / Dark / Positron, Google Satellite & Relevo, Esri World Imagery, OpenStreetMap)**.
+```
+index.html            aplicação (sem build step)
+css/app.css           design system próprio, sem Tailwind
+js/app.js             mapa, catálogo, filtros, identificação, upload
+vendor/               MapLibre GL, PMTiles, Sortable, shpjs, togeojson (versões fixas, locais)
+data/
+  territorio.pmtiles  tiles vetoriais z4–z12 (fonte única das 12 camadas)
+  layers.json         metadados, simbologia e estatísticas de filtro (~55 KB)
+  *.geojson           bases originais em resolução completa (usadas só no download)
+assets/               fontes Rawline e logotipos otimizados
+scripts/
+  build-data.mjs      normaliza os GeoJSON e gera layers.json + script do tippecanoe
+  serve.mjs           servidor local com suporte a Range e gzip
+documentacao.html     documentação funcional
+index-legacy.html     versão anterior (Leaflet + GeoJSON), mantida para comparação
+```
+
+Decisões principais:
+
+- **Um único arquivo PMTiles** com 12 *source layers*. Como as camadas compartilham os mesmos tiles, ligar/desligar uma camada é instantâneo depois que a área já foi carregada.
+- **`_fid`** é injetado em cada feição para permitir `feature-state` (destaque da feição selecionada).
+- **`cor_zona`** é calculada no pipeline para a simbologia institucional do zoneamento.
+- **`layers.json`** concentra rótulos, cores, campos primários e os valores únicos de cada campo com contagem, para popular o filtro sem varrer os dados.
+- **MapLibre GL JS 6** com o protocolo PMTiles registrado em runtime.
+- Bibliotecas e fontes são locais e versionadas; não há dependência de CDN no carregamento inicial.
 
 ---
 
-## Como Usar
+## Rodando localmente
 
-Acesse a aplicação web diretamente pelo link:  
-[https://ngeo-ideflor-bio.github.io/visualizador/](https://ngeo-ideflor-bio.github.io/visualizador/)
+O app precisa ser servido por HTTP (módulos ES, `fetch` e PMTiles não funcionam em `file://`).
+
+```bash
+node scripts/serve.mjs
+# abra http://localhost:4173/
+```
+
+O servidor de desenvolvimento suporta `Range` (necessário para PMTiles) e gzip.
+
+Para publicar, basta servir os arquivos estáticos do repositório. O GitHub Pages já suporta Range Requests. Se usar outro host (S3, Netlify, IIS), confirme que `Range` está habilitado para `data/territorio.pmtiles`.
+
+---
+
+## Regerando os dados
+
+Só é necessário quando os GeoJSON de `data/` forem atualizados.
+
+Pré-requisitos:
+
+- Node.js 18+
+- WSL com Ubuntu e `tippecanoe` (`sudo apt install tippecanoe`)
+- CLI `pmtiles` ([protomaps/go-pmtiles](https://github.com/protomaps/go-pmtiles/releases))
+
+```bash
+# 1. normaliza coordenadas (5 casas), injeta _fid/_label/cor_zona,
+#    calcula as estatísticas de filtro e gera data/layers.json
+node scripts/build-data.mjs
+
+# 2. gera o MBTiles (o script imprime o caminho e o comando)
+wsl -d Ubuntu -u root --exec bash "/mnt/c/.../visualizador-tiles/build.sh"
+
+# 3. converte para PMTiles
+pmtiles convert ".../visualizador-tiles/territorio.mbtiles" data/territorio.pmtiles --force
+```
+
+Parâmetros atuais do tippecanoe: zoom 4–12, `--simplification=3`, `--drop-densest-as-needed`. Para mais detalhe em zoom alto, aumente `TILE_MAXZOOM=13` (o arquivo cresce).
+
+O script grava os GeoJSON normalizados em `%TEMP%/visualizador-tiles` e imprime os comandos exatos para o seu sistema.
+
+---
+
+## Limitações conhecidas
+
+- O mapa usa geometria simplificada (tiles z4–z12). O **download** sempre usa a geometria completa do GeoJSON original.
+- Camadas grandes (zoneamento, UCs federais) podem levar alguns segundos para baixar no primeiro download do recorte; depois ficam em cache na sessão.
+- Filtros e identificação usam os atributos dos tiles. Campos com mais de 250 valores únicos (ex.: área) não aparecem no filtro.
+- Uploads valem para a sessão atual; não são persistidos.
+- O PMTiles é um arquivo de ~30 MB no repositório. Arquivos acima de 50 MB não são recomendados no GitHub.
+
+---
+
+## Versão anterior
+
+`index-legacy.html` mantém a versão Leaflet + GeoJSON para comparação. Ela continua funcional, mas carrega todos os dados de uma vez e não recebe as melhorias da v2.
+
+---
+
+## Tecnologias
+
+- **MapLibre GL JS 6.16** — renderização WebGL
+- **PMTiles 4.5** — tiles vetoriais em arquivo único com Range Requests
+- **Tippecanoe 2.53** — geração dos tiles (via WSL)
+- **shpjs / toGeoJSON** — leitura de Shapefile e KML no navegador
+- **SortableJS** — reordenação das camadas
+- **Rawline** — tipografia do Design System gov.br
 
 ---
 
 ## Licença
 
-Desenvolvido para o **IDEFLOR-Bio / Governo do Estado do Pará**.
+Desenvolvido pelo **NGEO / IDEFLOR-Bio / Governo do Estado do Pará**.
