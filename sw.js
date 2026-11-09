@@ -10,7 +10,7 @@
  *
  * Ao publicar uma nova versão do app, incremente CACHE_VERSION para renovar o shell.
  */
-const CACHE_VERSION = 'ngeo-visualizador-v3-pwa-1';
+const CACHE_VERSION = 'ngeo-visualizador-v3-pwa-2';
 
 const PRECACHE = [
   './',

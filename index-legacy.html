@@ -27,6 +27,9 @@
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Configuração local opcional (chaves de API). Não versionar. -->
+  <script src="js/config.js"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -1171,17 +1174,17 @@
     window.onload = async function () {
       lucide.createIcons();
 
-      // Base Neutral Tiles (Com chave de API CARTO fornecida pelo usuário)
-      const cartoVoyager = L.tileLayer('https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=', { maxZoom: 19, attribution: '&copy; CARTO' });
-      const cartoPositron = L.tileLayer('https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png?key=', { maxZoom: 19, attribution: '&copy; CARTO' });
-      const cartoDark = L.tileLayer('https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png?key=', { maxZoom: 19, attribution: '&copy; CARTO' });
+      // Base Neutral Tiles (CARTO Basemaps público, sem chave de API)
+      const cartoVoyager = L.tileLayer('https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; CARTO' });
+      const cartoPositron = L.tileLayer('https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; CARTO' });
+      const cartoDark = L.tileLayer('https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; CARTO' });
       const googleRelief = L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', { maxZoom: 18, attribution: '&copy; Google' });
       const googleSat = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { maxZoom: 20, attribution: '&copy; Google' });
       const esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '&copy; Esri' });
       const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' });
 
       const baseLayers = {
-        "Carto Voyager (Chave Ativa)": cartoVoyager,
+        "Carto Voyager": cartoVoyager,
         "CARTO Dark (Escuro)": cartoDark,
         "CARTO Positron (Claro)": cartoPositron,
         "Google Relevo": googleRelief,
@@ -1234,14 +1237,23 @@
         originalLayers['Quilombos Estaduais'] = { features: quilombosEstaduaisData.features, leafletLayer: L.geoJSON(quilombosEstaduaisData, { style: getQuilombosEstaduaisStyle }), styleFunc: getQuilombosEstaduaisStyle };
         originalLayers['Quilombos Federais'] = { features: quilombosFederaisData.features, leafletLayer: L.geoJSON(quilombosFederaisData, { style: getQuilombosFederaisStyle }), styleFunc: getQuilombosFederaisStyle };
 
-        const massaDaguaStyle = { 'water': getMassaDaguaVectorStyle() };
-        originalLayers['Massa d\'Água'] = {
-          leafletLayer: L.vectorGrid.protobuf("https://api.maptiler.com/tiles/0199583b-df1d-7f23-aa9f-46218575d630/{z}/{x}/{y}.pbf?key=", { vectorTileLayerStyles: massaDaguaStyle }),
-          styleFunc: getMassaDaguaVectorStyle
-        };
+        // Chave opcional do MapTiler vinda de js/config.js (fora do versionamento).
+        const maptilerKey = (window.APP_CONFIG && window.APP_CONFIG.maptilerKey) || '';
+        let massaDaguaLayer = null;
+        if (maptilerKey) {
+          const massaDaguaStyle = { 'water': getMassaDaguaVectorStyle() };
+          massaDaguaLayer = L.vectorGrid.protobuf(
+            `https://api.maptiler.com/tiles/0199583b-df1d-7f23-aa9f-46218575d630/{z}/{x}/{y}.pbf?key=${encodeURIComponent(maptilerKey)}`,
+            { vectorTileLayerStyles: massaDaguaStyle },
+          );
+          originalLayers['Massa d\'Água'] = {
+            leafletLayer: massaDaguaLayer,
+            styleFunc: getMassaDaguaVectorStyle,
+          };
+        }
 
         const overlayLayers = {
-          "Massa d'Água": originalLayers['Massa d\'Água'].leafletLayer,
+          ...(massaDaguaLayer ? { "Massa d'Água": massaDaguaLayer } : {}),
           "Quilombos Federais": originalLayers['Quilombos Federais'].leafletLayer,
           "Quilombos Estaduais": originalLayers['Quilombos Estaduais'].leafletLayer,
           "UCs Federais": originalLayers['UCs Federais'].leafletLayer,
