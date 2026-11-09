@@ -22,11 +22,12 @@ const FULL_DATA_ROOT = 'data/';
 const HIGHLIGHT = '#38bdf8';
 const UPLOAD_COLORS = ['#db2777', '#7c3aed', '#0284c7', '#ea580c', '#0f766e'];
 
-/* Chaves opcionais vêm de js/config.js (fora do versionamento). */
-const APP_CONFIG = window.APP_CONFIG || {};
-const CARTO_KEY = APP_CONFIG.cartoKey ? String(APP_CONFIG.cartoKey) : '';
-const cartoTiles = (style) =>
-  `https://basemaps.cartocdn.com/${style}/{z}/{x}/{y}.png${CARTO_KEY ? `?key=${encodeURIComponent(CARTO_KEY)}` : ''}`;
+/* Mapa base: OpenFreeMap (aberto, sem chave e sem cadastro). */
+const BASEMAP_STYLES = {
+  light: 'https://tiles.openfreemap.org/styles/positron',
+  dark: 'https://tiles.openfreemap.org/styles/dark',
+};
+const BASEMAP_ATTRIBUTION = '© OpenMapTiles © OpenStreetMap contributors · OpenFreeMap';
 
 const ICONS = {
   eye: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>',
@@ -86,6 +87,8 @@ const state = {
   outline: false,
   theme: 'light',
   basemap: 'neutral',
+  basemapStyles: null,
+  basemapLayerIds: { light: [], dark: [] },
   selected: [],
   prefs: {},
   uploadSeq: 0,
@@ -203,6 +206,8 @@ async function boot() {
 
   hydrateLayers();
 
+  await loadBasemapStyles();
+
   if (!window.pmtiles?.Protocol) {
     return fail('Biblioteca de tiles não carregada. Verifique vendor/pmtiles.js.');
   }
@@ -259,6 +264,13 @@ function createMap() {
 
   state.map = map;
   window.__v2 = state; // apoio a diagnóstico
+
+  // O estilo Dark do OpenFreeMap referencia o ícone "circle-11", ausente no
+  // sprite público: registra um placeholder transparente para o ícone.
+  map.on('styleimagemissing', (e) => {
+    if (!e?.id || map.hasImage(e.id)) return;
+    map.addImage(e.id, { width: 1, height: 1, data: new Uint8Array(4) });
+  });
   map.addControl(new NavigationControl({ showCompass: false }), 'bottom-left');
   map.addControl(new ScaleControl({ maxWidth: 96, unit: 'metric' }), 'bottom-left');
 
@@ -285,25 +297,27 @@ function createMap() {
   }, 20000);
 }
 
+async function loadBasemapStyles() {
+  const entries = Object.entries(BASEMAP_STYLES);
+  try {
+    const styles = await Promise.all(entries.map(async ([variant, url]) => {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status} em ${url}`);
+      return [variant, await res.json()];
+    }));
+    state.basemapStyles = Object.fromEntries(styles);
+  } catch (err) {
+    // Reserva offline: mapa raster sem chave (Esri Light/Dark Gray Canvas).
+    console.warn('[v2] OpenFreeMap indisponível; usando mapa base de reserva.', err);
+    state.basemapStyles = null;
+  }
+}
+
 function buildStyle() {
   const isDark = state.theme === 'dark';
+  const neutral = state.basemap === 'neutral';
+
   const sources = {
-    'base-light': {
-      type: 'raster',
-      tiles: [cartoTiles('light_all')],
-      tileSize: 256,
-      minzoom: 0,
-      maxzoom: 19,
-      attribution: '© OpenStreetMap contributors © CARTO',
-    },
-    'base-dark': {
-      type: 'raster',
-      tiles: [cartoTiles('dark_all')],
-      tileSize: 256,
-      minzoom: 0,
-      maxzoom: 19,
-      attribution: '© OpenStreetMap contributors © CARTO',
-    },
     'base-sat': {
       type: 'raster',
       tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
@@ -318,6 +332,63 @@ function buildStyle() {
       promoteId: '_fid',
     },
   };
+  const baseLayers = [];
+
+  if (state.basemapStyles) {
+    for (const variant of ['light', 'dark']) {
+      const base = state.basemapStyles[variant];
+      Object.assign(sources, base.sources);
+      state.basemapLayerIds[variant] = [];
+      for (const layer of base.layers) {
+        if (layer.type === 'background') continue;
+        const id = `ofm-${variant}-${layer.id}`;
+        state.basemapLayerIds[variant].push(id);
+        baseLayers.push({
+          ...layer,
+          id,
+          layout: {
+            ...(layer.layout || {}),
+            visibility: neutral && (variant === 'dark') === isDark ? 'visible' : 'none',
+          },
+        });
+      }
+    }
+    sources.openmaptiles = { ...sources.openmaptiles, attribution: BASEMAP_ATTRIBUTION };
+    if (sources.ne2_shaded) sources.ne2_shaded = { ...sources.ne2_shaded, attribution: 'Natural Earth' };
+  } else {
+    Object.assign(sources, {
+      'base-light': {
+        type: 'raster',
+        tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'],
+        tileSize: 256,
+        minzoom: 0,
+        maxzoom: 16,
+        attribution: 'Tiles © Esri',
+      },
+      'base-dark': {
+        type: 'raster',
+        tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'],
+        tileSize: 256,
+        minzoom: 0,
+        maxzoom: 16,
+        attribution: 'Tiles © Esri',
+      },
+    });
+    baseLayers.push(
+      {
+        id: 'base-light',
+        type: 'raster',
+        source: 'base-light',
+        layout: { visibility: neutral && !isDark ? 'visible' : 'none' },
+      },
+      {
+        id: 'base-dark',
+        type: 'raster',
+        source: 'base-dark',
+        layout: { visibility: neutral && isDark ? 'visible' : 'none' },
+      },
+    );
+  }
 
   const layers = [
     {
@@ -325,18 +396,7 @@ function buildStyle() {
       type: 'background',
       paint: { 'background-color': isDark ? '#081a31' : '#e9eef4' },
     },
-    {
-      id: 'base-light',
-      type: 'raster',
-      source: 'base-light',
-      layout: { visibility: !isDark && state.basemap === 'neutral' ? 'visible' : 'none' },
-    },
-    {
-      id: 'base-dark',
-      type: 'raster',
-      source: 'base-dark',
-      layout: { visibility: isDark && state.basemap === 'neutral' ? 'visible' : 'none' },
-    },
+    ...baseLayers,
     {
       id: 'base-sat',
       type: 'raster',
@@ -346,7 +406,12 @@ function buildStyle() {
     ...buildOverlayLayers(),
   ];
 
-  return { version: 8, sources, layers };
+  const style = { version: 8, sources, layers };
+  if (state.basemapStyles) {
+    style.glyphs = state.basemapStyles.light.glyphs;
+    style.sprite = state.basemapStyles.light.sprite;
+  }
+  return style;
 }
 
 function buildOverlayLayers() {
@@ -496,9 +561,14 @@ function refreshBasemapVisibility() {
   if (!map) return;
   const neutral = state.basemap === 'neutral';
   const dark = state.theme === 'dark';
-  map.setLayoutProperty('base-light', 'visibility', neutral && !dark ? 'visible' : 'none');
-  map.setLayoutProperty('base-dark', 'visibility', neutral && dark ? 'visible' : 'none');
-  map.setLayoutProperty('base-sat', 'visibility', state.basemap === 'satellite' ? 'visible' : 'none');
+  const setVisibility = (id, visible) => {
+    if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none');
+  };
+  for (const id of state.basemapLayerIds.light) setVisibility(id, neutral && !dark);
+  for (const id of state.basemapLayerIds.dark) setVisibility(id, neutral && dark);
+  setVisibility('base-light', neutral && !dark);
+  setVisibility('base-dark', neutral && dark);
+  setVisibility('base-sat', state.basemap === 'satellite');
   map.setPaintProperty('background', 'background-color', dark ? '#081a31' : '#e9eef4');
 }
 
